@@ -100,10 +100,10 @@ FBuffer CBufferManager::CreateBuffer ( VkDeviceSize Size,
     return buffer;
     }
 
+
 FBuffer CBufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Data )
     {
-   // LogDebug ( "Creating vertex buffer - Size: ", Size, ", Data: ", ( void * ) Data );
-
+    LogDebug ( "Creating vertex buffer - Size: ", Size, ", Data: ", ( void * ) Data );
     FBuffer buffer;
 
     if (Size == 0)
@@ -114,7 +114,7 @@ FBuffer CBufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Dat
 
     if (Data)
         {
-       // LogDebug ( "Creating staging buffer for vertex data" );
+        LogDebug ( "Creating staging buffer for vertex data" );
         FBuffer stagingBuffer = CreateStagingBuffer ( Size, Data );
         if (!stagingBuffer.IsValid ())
             {
@@ -122,22 +122,55 @@ FBuffer CBufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Dat
             return buffer;
             }
 
-       // LogDebug ( "Creating device local vertex buffer" );
+        LogDebug ( "Creating device local vertex buffer" );
         buffer = CreateBuffer ( Size,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
         if (buffer.IsValid ())
             {
-          //  LogDebug ( "Copying data from staging to device buffer" );
+            LogDebug ( "Copying data from staging to device buffer" );
             CopyBufferToBuffer ( stagingBuffer, buffer, Size );
+
+            // *** ВАЖНО: ПРОВЕРКА ДАННЫХ ***
+            // Создаем временный буфер для чтения данных обратно
+            FBuffer readBackBuffer = CreateBuffer ( Size,
+                                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
+
+            if (readBackBuffer.IsValid ())
+                {
+                    // Копируем из device-local буфера в host-visible
+                CopyBufferToBuffer ( buffer, readBackBuffer, Size );
+
+                // Читаем данные
+                void * mappedData;
+                auto * deviceMgr = static_cast< CDeviceManager * >( m_Info.Vulkan.DeviceManager.get () );
+                VkDevice device = deviceMgr->GetDevice ();
+
+                vkMapMemory ( device, readBackBuffer.Memory, 0, Size, 0, &mappedData );
+
+                LogDebug ( "=== VERTEX BUFFER DATA VERIFICATION ===" );
+                const float * floatData = static_cast< const float * >( mappedData );
+                for (int i = 0; i < 3; i++)
+                    {
+                    int offset = i * 6;
+                    LogDebug ( "  Vertex ", i,
+                               ": pos(", floatData[ offset ], ",", floatData[ offset + 1 ], ",", floatData[ offset + 2 ],
+                               ") color(", floatData[ offset + 3 ], ",", floatData[ offset + 4 ], ",", floatData[ offset + 5 ], ")" );
+                    }
+                LogDebug ( "========================================" );
+
+                vkUnmapMemory ( device, readBackBuffer.Memory );
+                DestroyBuffer ( readBackBuffer );
+                }
             }
 
         DestroyBuffer ( stagingBuffer );
         }
     else
         {
-       // LogDebug ( "Creating host visible vertex buffer" );
+        LogDebug ( "Creating host visible vertex buffer" );
         buffer = CreateBuffer ( Size,
                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
@@ -145,7 +178,7 @@ FBuffer CBufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Dat
 
     if (buffer.IsValid ())
         {
-       // LogDebug ( "Vertex buffer created successfully" );
+        LogDebug ( "Vertex buffer created successfully" );
         }
     else
         {

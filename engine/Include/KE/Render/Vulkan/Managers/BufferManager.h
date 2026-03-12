@@ -133,8 +133,8 @@ class KE_API CBufferManager final : public IVulkanManager
 
 		// Default triangle vertices
 		const std::vector<FTriangleVertex> m_TriangleVertices = {
-				{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},  // Top - red
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},   // Bottom right - green
-	{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
+		{{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},  // Левый верх (красный)
+		{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},   // Правый верх (зеленый)
+		{{0.0f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}   // Центр низ (синий)
 			};
 	};

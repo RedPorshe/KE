@@ -293,6 +293,7 @@ bool CSwapChainManager::Present ( VkSemaphore WaitSemaphore, uint32_t ImageIndex
 
     VkResult result = vkQueuePresentKHR ( presentQueue, &presentInfo );
 
+   
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
         LogDebug ( "Swapchain out of date or suboptimal, recreating..." );

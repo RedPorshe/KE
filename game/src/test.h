@@ -16,6 +16,9 @@ class MyCharacter : public CCharacter
 		void EndPlay () override;
 		void SetupPlayerInputComponent ( CInputComponent * InputComponent ) override;
 		void DebugInfo ( float dt ) override;
+		void MoveForward ( float value );
+		void MoveRight ( float value );
+		void Jump ();
 	private:
 		CCameraComponent * Camera = nullptr;
 	};

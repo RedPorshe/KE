@@ -177,7 +177,7 @@ void CCommandManager::EndCommandBuffer ( VkCommandBuffer CmdBuffer )
     if (result != VK_SUCCESS)
         {
         LogError ( "Failed to end command buffer: ", static_cast< int >( result ) );
-        }
+        }       
     }
 
 VkCommandBuffer CCommandManager::BeginSingleTimeCommands ()

@@ -775,8 +775,16 @@ VkPipeline CPipelineManager::CreateTrianglePipeline ( VkRenderPass RenderPass )
         {         
         return GetPipeline ( "TrianglePipeline" );
         }
-     
-    VkPipelineLayout layout = CreatePipelineLayout ( "TriangleLayout" );
+    // СОЗДАЕМ LAYOUT ЯВНО БЕЗ ДЕСКРИПТОРОВ
+    std::vector<VkDescriptorSetLayout> emptyLayouts;
+    std::vector<VkPushConstantRange> emptyPushConstants;
+
+    VkPipelineLayout layout = CreatePipelineLayout (
+        "TriangleLayout",
+        emptyLayouts,      // Нет дескрипторных сетов
+        emptyPushConstants  // Нет push constants
+    );
+
     if (layout == VK_NULL_HANDLE)
         {
         LogError ( "Failed to create triangle pipeline layout" );
@@ -804,8 +812,8 @@ VkPipeline CPipelineManager::CreateTrianglePipeline ( VkRenderPass RenderPass )
     config.VertexInput = GetTriangleVertexInput ();
     config.Topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     config.PolygonMode = VK_POLYGON_MODE_FILL;
-    config.CullMode = VK_CULL_MODE_BACK_BIT;
-    config.FrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    config.CullMode = VK_CULL_MODE_NONE;
+    config.FrontFace = VK_FRONT_FACE_CLOCKWISE;
     config.DepthTestEnable = VK_FALSE;
     config.DepthWriteEnable = VK_FALSE;
     config.DepthCompareOp = VK_COMPARE_OP_LESS;

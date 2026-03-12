@@ -72,7 +72,8 @@ bool CRenderer::Initialize ()
 
 	m_TrianglePipeline = m_PipelineManager->GetPipeline ( "TrianglePipeline" );
 	m_TrianglePipelineLayout = m_PipelineManager->GetPipelineLayout ( "TriangleLayout" );
-
+	LOG_DEBUG ( "TrianglePipeline: ", ( void * ) m_TrianglePipeline );
+	LOG_DEBUG ( "TrianglePipelineLayout: ", ( void * ) m_TrianglePipelineLayout );
 	if (m_TrianglePipeline == VK_NULL_HANDLE)
 		{
 		LogError ( "Failed to get triangle pipeline" );
@@ -322,6 +323,7 @@ bool CRenderer::EndFrame ( uint32_t ImageIndex )
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
 
 	VkResult result = vkQueueSubmit ( graphicsQueue, 1, &submitInfo, fence );
+
 	if (result != VK_SUCCESS)
 		{
 		LogError ( "Failed to submit command buffer: ", static_cast< int >( result ) );
@@ -554,7 +556,7 @@ void CRenderer::CleanupFrameResources ()
 bool CRenderer::RecordCommandBuffer ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
 	{
 	auto Info = CEngine::Get ().GetRenderInfo ();
-	if (Info->HasInfo)
+	if (!Info->HasInfo)
 		{
 		TriangleStub ( CommandBuffer, ImageIndex );
 		vkCmdEndRenderPass ( CommandBuffer );
@@ -635,118 +637,6 @@ bool CRenderer::RecreateSwapChainResources ()
 	}
 
 
-
-void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
-	{
-
-
-	
-	static int WarnCount = 0;
-	if (WarnCount < 1)
-		{
-		LOG_WARN ( "Nothing to render Call Fallback Triangle" );
-		WarnCount++;
-		}
-
-	if (CommandBuffer == VK_NULL_HANDLE)
-		{
-		LogError ( "RecordCommandBuffer: CommandBuffer is null" );
-		return;
-		}
-
-	if (!m_TriangleVertexBuffer.IsValid ())
-		{
-		LogError ( "RecordCommandBuffer: m_TriangleVertexBuffer is invalid" );
-		return;
-		}
-
-	if (m_TrianglePipeline == VK_NULL_HANDLE)
-		{
-		LogError ( "RecordCommandBuffer: m_TrianglePipeline is null" );
-		return;
-		}
-
-	VkRenderPass renderPass = m_RenderPassManager->GetMainRenderPass ();
-	
-	if (renderPass == VK_NULL_HANDLE)
-		{
-		LogError ( "RecordCommandBuffer: Main render pass is null" );
-		return;
-		}
-
-	VkFramebuffer framebuffer = m_RenderPassManager->GetFramebuffer ( ImageIndex );
-	
-	if (framebuffer == VK_NULL_HANDLE)
-		{
-		LogError ( "RecordCommandBuffer: Framebuffer for image ", ImageIndex, " is null" );
-		return;
-		}
-
-	VkExtent2D extent = m_SwapChainManager->GetExtent ();
-	
-	if (extent.width == 0 || extent.height == 0)
-		{
-		LogError ( "RecordCommandBuffer: SwapChain extent is invalid: ", extent.width, "x", extent.height );
-		return;
-		}
-
-	m_CommandManager->BeginCommandBuffer ( CommandBuffer );
-
-	// Begin render pass
-	VkRenderPassBeginInfo renderPassInfo {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = renderPass;
-	renderPassInfo.framebuffer = framebuffer;
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = extent;
-
-	VkClearValue clearValues[ 2 ];
-	clearValues[ 0 ].color = { {0.2f, 0.2f, 0.8f, 1.0f} };
-	clearValues[ 1 ].depthStencil = { 1.0f, 0 };
-
-	renderPassInfo.clearValueCount = 2;
-	renderPassInfo.pClearValues = clearValues;
-
-	vkCmdBeginRenderPass ( CommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
-
-	if (!m_TriangleVertexBuffer.IsValid ())
-		{
-		LogError ( "TriangleStub: Vertex buffer invalid!" );
-		return;
-		}
-
-	if (m_TrianglePipeline == VK_NULL_HANDLE)
-		{
-		LogError ( "TriangleStub: Pipeline null!" );
-		return;
-		}
-
-		// Bind pipeline
-	vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_TrianglePipeline );
-	
-	VkBuffer vertexBuffers [] = { m_TriangleVertexBuffer.Buffer };
-	VkDeviceSize offsets [] = { 0 };
-	vkCmdBindVertexBuffers ( CommandBuffer, 0, 1, vertexBuffers, offsets );
-	
-	VkViewport viewport {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast< float >( m_SwapChainManager->GetExtent ().width );
-	viewport.height = static_cast< float >( m_SwapChainManager->GetExtent ().height );
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport ( CommandBuffer, 0, 1, &viewport );
-
-	VkRect2D scissor {};
-	scissor.offset = { 0, 0 };
-	scissor.extent = m_SwapChainManager->GetExtent ();
-	vkCmdSetScissor ( CommandBuffer, 0, 1, &scissor );
-	
-	// Draw triangle
-	vkCmdDraw ( CommandBuffer, 3, 1, 0, 0 );
-	
-	}
-
 void CRenderer::RenderWorld ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
 	{
 	auto Info = CEngine::Get ().GetRenderInfo ();
@@ -766,7 +656,7 @@ void CRenderer::RenderWorld ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex
 
 	m_CommandManager->BeginCommandBuffer ( CommandBuffer );
 
-	
+
 	VkRenderPassBeginInfo renderPassInfo {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_RenderPassManager->GetMainRenderPass ();
@@ -783,7 +673,7 @@ void CRenderer::RenderWorld ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex
 
 	vkCmdBeginRenderPass ( CommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 
-	
+
 	VkViewport viewport {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -798,10 +688,10 @@ void CRenderer::RenderWorld ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex
 	scissor.extent = extent;
 	vkCmdSetScissor ( CommandBuffer, 0, 1, &scissor );
 
-	
+
+	RenderMeshes ( CommandBuffer, ImageIndex );
 	RenderTerrain ( CommandBuffer, ImageIndex );
 	RenderDebugWireFrame ( CommandBuffer, ImageIndex );
-	RenderMeshes ( CommandBuffer, ImageIndex );
 
 	vkCmdEndRenderPass ( CommandBuffer );
 	m_CommandManager->EndCommandBuffer ( CommandBuffer );
@@ -861,7 +751,7 @@ void CRenderer::RenderMeshes ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 			continue;
 			}
 
-		 vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
+		vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
 
 
 		VkDescriptorSet sets[ 1 ] = { globalSet };
@@ -1034,101 +924,234 @@ void CRenderer::RenderDebugWireFrame ( VkCommandBuffer CommandBuffer, uint32_t I
 		}
 	}
 
-	void CRenderer::RenderTerrain ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
-		{	
-		auto Info = CEngine::Get ().GetRenderInfo ();
-		
-		if (Info->Terrains.empty ())
-			{
-			LOG_DEBUG ( "No terrains to render" );
-			return;
-			}
+void CRenderer::RenderTerrain ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
+	{
+	auto Info = CEngine::Get ().GetRenderInfo ();
 
-		uint32_t currentFrame = m_SyncManager->GetCurrentFrame ();
-		
-		// Pipeline checks
-		VkPipeline terrainPipeline = m_PipelineManager->GetPipeline ( "TerrainPipeline" );
-		VkPipelineLayout terrainLayout = m_PipelineManager->GetPipelineLayout ( "TerrainLayout" );
-		
-		if (terrainPipeline == VK_NULL_HANDLE || terrainLayout == VK_NULL_HANDLE)
-			{
-			LOG_ERROR ( "Pipeline or layout NULL" );
-			return;
-			}
-
-		vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline );
-		
-		// Descriptor sets
-		VkDescriptorSet globalSet = VK_NULL_HANDLE;
-		if (currentFrame < m_FrameDescriptorSets.size ())
-			globalSet = m_FrameDescriptorSets[ currentFrame ].GlobalSet;
-		
-
-		if (globalSet != VK_NULL_HANDLE)
-			{
-			VkDescriptorSet sets[ 1 ] = { globalSet };
-			vkCmdBindDescriptorSets ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  terrainLayout, 0, 1, sets, 0, nullptr );
-			
-			}
-
-		const auto & terrains = Info->Terrains;
-	
-
-		for (size_t i = 0; i < terrains.size (); i++)
-			{
-		
-			const FTerrainRenderInfo & terrain = terrains[ i ];
-
-
-			if (!terrain.IsValid ())
-				{
-				LOG_WARN ( "Invalid terrain, skipping" );
-				continue;
-				}
-
-			if (terrain.VertexBuffer == VK_NULL_HANDLE)
-				{
-				LOG_ERROR ( "Vertex buffer NULL" );
-				continue;
-				}
-
-		
-			struct FTerrainPushConstants
-				{
-				glm::mat4x4 model;
-				glm::vec4 terrainParams;
-				} pushConstants;
-
-			pushConstants.model = CEMath::ToGLM ( terrain.Model );
-			pushConstants.terrainParams = glm::vec4 ( 1.0f, 1.0f, 0.001f, 1.0f );
-
-			vkCmdPushConstants ( CommandBuffer, terrainLayout,
-								 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-								 0, sizeof ( pushConstants ), &pushConstants );
-		
-			
-			
-			// Bind vertex buffer
-			VkBuffer vertexBuffers [] = { terrain.VertexBuffer };
-			VkDeviceSize offsets [] = { 0 };
-			vkCmdBindVertexBuffers ( CommandBuffer, 0, 1, vertexBuffers, offsets );
-			
-
-			// Draw
-			if (terrain.IndexBuffer != VK_NULL_HANDLE && terrain.IndexCount > 0)
-				{
-				vkCmdBindIndexBuffer ( CommandBuffer, terrain.IndexBuffer, 0, VK_INDEX_TYPE_UINT32 );
-				
-				vkCmdDrawIndexed ( CommandBuffer, terrain.IndexCount, 1, 0, 0, 0 );
-				
-				}
-			else
-				{
-				vkCmdDraw ( CommandBuffer, terrain.VertexCount, 1, 0, 0 );
-				
-				}
-			}
-
-		
+	if (Info->Terrains.empty ())
+		{
+		LOG_DEBUG ( "No terrains to render" );
+		return;
 		}
+
+	uint32_t currentFrame = m_SyncManager->GetCurrentFrame ();
+
+	// Pipeline checks
+	VkPipeline terrainPipeline = m_PipelineManager->GetPipeline ( "TerrainPipeline" );
+	VkPipelineLayout terrainLayout = m_PipelineManager->GetPipelineLayout ( "TerrainLayout" );
+
+	if (terrainPipeline == VK_NULL_HANDLE || terrainLayout == VK_NULL_HANDLE)
+		{
+		LOG_ERROR ( "Pipeline or layout NULL" );
+		return;
+		}
+
+	vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline );
+
+	// Descriptor sets
+	VkDescriptorSet globalSet = VK_NULL_HANDLE;
+	if (currentFrame < m_FrameDescriptorSets.size ())
+		globalSet = m_FrameDescriptorSets[ currentFrame ].GlobalSet;
+
+
+	if (globalSet != VK_NULL_HANDLE)
+		{
+		VkDescriptorSet sets[ 1 ] = { globalSet };
+		vkCmdBindDescriptorSets ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+								  terrainLayout, 0, 1, sets, 0, nullptr );
+
+		}
+
+	const auto & terrains = Info->Terrains;
+
+
+	for (size_t i = 0; i < terrains.size (); i++)
+		{
+
+		const FTerrainRenderInfo & terrain = terrains[ i ];
+
+
+		if (!terrain.IsValid ())
+			{
+			LOG_WARN ( "Invalid terrain, skipping" );
+			continue;
+			}
+
+		if (terrain.VertexBuffer == VK_NULL_HANDLE)
+			{
+			LOG_ERROR ( "Vertex buffer NULL" );
+			continue;
+			}
+
+
+		struct FTerrainPushConstants
+			{
+			glm::mat4x4 model;
+			glm::vec4 terrainParams;
+			} pushConstants;
+
+		pushConstants.model = CEMath::ToGLM ( terrain.Model );
+		pushConstants.terrainParams = glm::vec4 ( 1.0f, 1.0f, 0.001f, 1.0f );
+
+		vkCmdPushConstants ( CommandBuffer, terrainLayout,
+							 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+							 0, sizeof ( pushConstants ), &pushConstants );
+
+
+
+		// Bind vertex buffer
+		VkBuffer vertexBuffers [] = { terrain.VertexBuffer };
+		VkDeviceSize offsets [] = { 0 };
+		vkCmdBindVertexBuffers ( CommandBuffer, 0, 1, vertexBuffers, offsets );
+
+
+		// Draw
+		if (terrain.IndexBuffer != VK_NULL_HANDLE && terrain.IndexCount > 0)
+			{
+			vkCmdBindIndexBuffer ( CommandBuffer, terrain.IndexBuffer, 0, VK_INDEX_TYPE_UINT32 );
+
+			vkCmdDrawIndexed ( CommandBuffer, terrain.IndexCount, 1, 0, 0, 0 );
+
+			}
+		else
+			{
+			vkCmdDraw ( CommandBuffer, terrain.VertexCount, 1, 0, 0 );
+
+			}
+		}
+
+
+	}
+
+
+void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
+	{
+	LOG_DEBUG ( "========== TRIANGLE STUB DEBUG START ==========" );
+	LOG_DEBUG ( "ImageIndex: ", ImageIndex );
+	LOG_DEBUG ( "CommandBuffer: ", ( void * ) CommandBuffer );
+	LOG_DEBUG ( "m_TrianglePipeline: ", ( void * ) m_TrianglePipeline );
+	LOG_DEBUG ( "m_TrianglePipelineLayout: ", ( void * ) m_TrianglePipelineLayout );
+	LOG_DEBUG ( "m_TriangleVertexBuffer.Buffer: ", ( void * ) m_TriangleVertexBuffer.Buffer );
+	LOG_DEBUG ( "m_TriangleVertexBuffer.IsValid(): ", m_TriangleVertexBuffer.IsValid () );
+
+	static int WarnCount = 0;
+	if (WarnCount < 1)
+		{
+		LOG_WARN ( "Nothing to render Call Fallback Triangle" );
+		WarnCount++;
+		}
+
+	if (CommandBuffer == VK_NULL_HANDLE)
+		{
+		LogError ( "RecordCommandBuffer: CommandBuffer is null" );
+		return;
+		}
+
+	if (!m_TriangleVertexBuffer.IsValid ())
+		{
+		LogError ( "RecordCommandBuffer: m_TriangleVertexBuffer is invalid" );
+		return;
+		}
+
+	if (m_TrianglePipeline == VK_NULL_HANDLE)
+		{
+		LogError ( "RecordCommandBuffer: m_TrianglePipeline is null" );
+		return;
+		}
+
+	VkRenderPass renderPass = m_RenderPassManager->GetMainRenderPass ();
+	LOG_DEBUG ( "RenderPass: ", ( void * ) renderPass );
+
+	if (renderPass == VK_NULL_HANDLE)
+		{
+		LogError ( "RecordCommandBuffer: Main render pass is null" );
+		return;
+		}
+
+	VkFramebuffer framebuffer = m_RenderPassManager->GetFramebuffer ( ImageIndex );
+	LOG_DEBUG ( "Framebuffer: ", ( void * ) framebuffer );
+
+	if (framebuffer == VK_NULL_HANDLE)
+		{
+		LogError ( "RecordCommandBuffer: Framebuffer for image ", ImageIndex, " is null" );
+		return;
+		}
+
+	VkExtent2D extent = m_SwapChainManager->GetExtent ();
+	LOG_DEBUG ( "Extent: ", extent.width, "x", extent.height );
+
+	if (extent.width == 0 || extent.height == 0)
+		{
+		LogError ( "RecordCommandBuffer: SwapChain extent is invalid: ", extent.width, "x", extent.height );
+		return;
+		}
+
+	m_CommandManager->BeginCommandBuffer ( CommandBuffer );
+
+	// Begin render pass
+	VkRenderPassBeginInfo renderPassInfo {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = renderPass;
+	renderPassInfo.framebuffer = framebuffer;
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = extent;
+
+	VkClearValue clearValues[ 2 ];
+	clearValues[ 0 ].color = { {0.2f, 0.2f, 0.8f, 1.0f} };
+	clearValues[ 1 ].depthStencil = { 1.0f, 0 };
+
+	renderPassInfo.clearValueCount = 2;
+	renderPassInfo.pClearValues = clearValues;
+
+	vkCmdBeginRenderPass ( CommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
+	LOG_DEBUG ( "Render pass begun" );
+
+	// Bind pipeline
+	vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_TrianglePipeline );
+	LOG_DEBUG ( "Pipeline bound" );
+
+	// Bind descriptor sets
+	uint32_t currentFrame = m_SyncManager->GetCurrentFrame ();
+	LOG_DEBUG ( "Current frame: ", currentFrame );
+
+	VkDescriptorSet globalSet = VK_NULL_HANDLE;
+	if (currentFrame < m_FrameDescriptorSets.size ())
+		{
+		globalSet = m_FrameDescriptorSets[ currentFrame ].GlobalSet;
+		LOG_DEBUG ( "Global set from frame ", currentFrame, ": ", ( void * ) globalSet );
+		}
+	else
+		{
+		LOG_ERROR ( "currentFrame out of range: ", currentFrame, " >= ", m_FrameDescriptorSets.size () );
+		}
+
+
+	VkBuffer vertexBuffers [] = { m_TriangleVertexBuffer.Buffer };
+	VkDeviceSize offsets [] = { 0 };
+	vkCmdBindVertexBuffers ( CommandBuffer, 0, 1, vertexBuffers, offsets );
+	LOG_DEBUG ( "Vertex buffer bound" );
+
+	// Set viewport
+	VkViewport viewport {};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast< float >( extent.width );
+	viewport.height = static_cast< float >( extent.height );
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport ( CommandBuffer, 0, 1, &viewport );
+	LOG_DEBUG ( "Viewport set: ", viewport.width, "x", viewport.height );
+
+	// Set scissor
+	VkRect2D scissor {};
+	scissor.offset = { 0, 0 };
+	scissor.extent = extent;
+	vkCmdSetScissor ( CommandBuffer, 0, 1, &scissor );
+	LOG_DEBUG ( "Scissor set" );
+
+	// Draw triangle
+	vkCmdDraw ( CommandBuffer, 3, 1, 0, 0 );
+	LOG_DEBUG ( "Draw called with 3 vertices" );
+
+	LOG_DEBUG ( "========== TRIANGLE STUB DEBUG END ==========" );
+	}
