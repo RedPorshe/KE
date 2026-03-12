@@ -36,7 +36,7 @@ void main() {
     // Правильное преобразование нормали
     mat3 normalMatrix = transpose(inverse(mat3(push.model)));
     fragNormal = normalize(normalMatrix * inNormal);
-    
+   
     // UV координаты с tiling
     fragUV = inUV * push.terrainParams.x;
     

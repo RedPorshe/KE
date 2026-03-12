@@ -36,6 +36,19 @@ void CBaseMeshComponent::InitComponent ()
 void CBaseMeshComponent::Tick ( float DeltaTime )
 	{
 	Super::Tick ( DeltaTime );
+
+	
+	DebugTimer += DeltaTime;
+	if (DebugTimer >= 100.f)
+		{
+		LOG_DEBUG ( "INFO FROM :", GetName () );
+		LOG_DEBUG ( "  Vertex count: ", m_VertexCount );
+		LOG_DEBUG ( "  Index count: ", m_IndexCount );
+		LOG_DEBUG ( "  Vertex buffer: ", ( void * ) m_VertexBuffer );
+		LOG_DEBUG ( "  Index buffer: ", ( void * ) m_IndexBuffer );
+		LOG_DEBUG ( "END INFO FROM: ", GetName () );
+		DebugTimer = 0.f;
+		}
 	}
 
 void CBaseMeshComponent::OnBeginPlay ()

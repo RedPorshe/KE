@@ -157,12 +157,6 @@ const char * CRenderer::GetManagerName () const
 
 bool CRenderer::RenderScene ()
 	{
-	if (m_TrianglePipeline == VK_NULL_HANDLE)
-		{
-		LogDebug ( "  Pipeline not ready, skipping render" );
-		return true;
-		}
-
 	try
 		{
 		uint32_t imageIndex;
@@ -560,7 +554,7 @@ void CRenderer::CleanupFrameResources ()
 bool CRenderer::RecordCommandBuffer ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
 	{
 	auto Info = CEngine::Get ().GetRenderInfo ();
-	if (!Info->HasInfo)
+	if (Info->HasInfo)
 		{
 		TriangleStub ( CommandBuffer, ImageIndex );
 		vkCmdEndRenderPass ( CommandBuffer );
@@ -644,6 +638,9 @@ bool CRenderer::RecreateSwapChainResources ()
 
 void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
 	{
+
+
+	
 	static int WarnCount = 0;
 	if (WarnCount < 1)
 		{
@@ -670,6 +667,7 @@ void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 		}
 
 	VkRenderPass renderPass = m_RenderPassManager->GetMainRenderPass ();
+	
 	if (renderPass == VK_NULL_HANDLE)
 		{
 		LogError ( "RecordCommandBuffer: Main render pass is null" );
@@ -677,6 +675,7 @@ void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 		}
 
 	VkFramebuffer framebuffer = m_RenderPassManager->GetFramebuffer ( ImageIndex );
+	
 	if (framebuffer == VK_NULL_HANDLE)
 		{
 		LogError ( "RecordCommandBuffer: Framebuffer for image ", ImageIndex, " is null" );
@@ -684,6 +683,7 @@ void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 		}
 
 	VkExtent2D extent = m_SwapChainManager->GetExtent ();
+	
 	if (extent.width == 0 || extent.height == 0)
 		{
 		LogError ( "RecordCommandBuffer: SwapChain extent is invalid: ", extent.width, "x", extent.height );
@@ -723,11 +723,11 @@ void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 
 		// Bind pipeline
 	vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_TrianglePipeline );
-
+	
 	VkBuffer vertexBuffers [] = { m_TriangleVertexBuffer.Buffer };
 	VkDeviceSize offsets [] = { 0 };
 	vkCmdBindVertexBuffers ( CommandBuffer, 0, 1, vertexBuffers, offsets );
-
+	
 	VkViewport viewport {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -741,9 +741,10 @@ void CRenderer::TriangleStub ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 	scissor.offset = { 0, 0 };
 	scissor.extent = m_SwapChainManager->GetExtent ();
 	vkCmdSetScissor ( CommandBuffer, 0, 1, &scissor );
-
+	
 	// Draw triangle
 	vkCmdDraw ( CommandBuffer, 3, 1, 0, 0 );
+	
 	}
 
 void CRenderer::RenderWorld ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
@@ -798,15 +799,13 @@ void CRenderer::RenderWorld ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex
 	vkCmdSetScissor ( CommandBuffer, 0, 1, &scissor );
 
 	
-	RenderMeshes ( CommandBuffer, ImageIndex );
 	RenderTerrain ( CommandBuffer, ImageIndex );
 	RenderDebugWireFrame ( CommandBuffer, ImageIndex );
+	RenderMeshes ( CommandBuffer, ImageIndex );
 
 	vkCmdEndRenderPass ( CommandBuffer );
 	m_CommandManager->EndCommandBuffer ( CommandBuffer );
 	}
-
-
 
 
 void CRenderer::RenderMeshes ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
@@ -862,7 +861,7 @@ void CRenderer::RenderMeshes ( VkCommandBuffer CommandBuffer, uint32_t ImageInde
 			continue;
 			}
 
-		vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
+		 vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
 
 
 		VkDescriptorSet sets[ 1 ] = { globalSet };
@@ -1035,120 +1034,101 @@ void CRenderer::RenderDebugWireFrame ( VkCommandBuffer CommandBuffer, uint32_t I
 		}
 	}
 
-
 	void CRenderer::RenderTerrain ( VkCommandBuffer CommandBuffer, uint32_t ImageIndex )
-		{
+		{	
 		auto Info = CEngine::Get ().GetRenderInfo ();
+		
+		if (Info->Terrains.empty ())
+			{
+			LOG_DEBUG ( "No terrains to render" );
+			return;
+			}
+
 		uint32_t currentFrame = m_SyncManager->GetCurrentFrame ();
-
-		// Проверки
-		if (currentFrame >= m_FrameDescriptorSets.size ())
-			{
-			LogError ( "RenderTerrain: currentFrame out of range" );
-			return;
-			}
-
-		if (CommandBuffer == VK_NULL_HANDLE)
-			{
-			LogError ( "RenderTerrain: CommandBuffer is NULL" );
-			return;
-			}
-
+		
+		// Pipeline checks
 		VkPipeline terrainPipeline = m_PipelineManager->GetPipeline ( "TerrainPipeline" );
 		VkPipelineLayout terrainLayout = m_PipelineManager->GetPipelineLayout ( "TerrainLayout" );
-
+		
 		if (terrainPipeline == VK_NULL_HANDLE || terrainLayout == VK_NULL_HANDLE)
 			{
-			LogError ( "RenderTerrain: Pipeline or layout is NULL" );
+			LOG_ERROR ( "Pipeline or layout NULL" );
 			return;
 			}
 
 		vkCmdBindPipeline ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline );
-
-		// Привязываем глобальный дескрипторный набор
+		
+		// Descriptor sets
 		VkDescriptorSet globalSet = VK_NULL_HANDLE;
 		if (currentFrame < m_FrameDescriptorSets.size ())
-			{
 			globalSet = m_FrameDescriptorSets[ currentFrame ].GlobalSet;
-			}
+		
 
 		if (globalSet != VK_NULL_HANDLE)
 			{
 			VkDescriptorSet sets[ 1 ] = { globalSet };
-			vkCmdBindDescriptorSets (
-				CommandBuffer,
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				terrainLayout,
-				0, 1, sets,
-				0, nullptr );
+			vkCmdBindDescriptorSets ( CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  terrainLayout, 0, 1, sets, 0, nullptr );
+			
 			}
-
-		
-		struct FTerrainPushConstants
-			{
-			glm::mat4x4 model;        
-			glm::vec4 terrainParams;   
-			} pushConstants;
-
-			// Проверяем размер структуры (должно быть 80 байт)
-		static_assert( sizeof ( pushConstants ) == 80, "FTerrainPushConstants size must be 80 bytes" );
 
 		const auto & terrains = Info->Terrains;
-
-		if (terrains.empty ())
-			{
-			LogDebug ( "  No terrains to render" );
-			return;
-			}
+	
 
 		for (size_t i = 0; i < terrains.size (); i++)
 			{
+		
 			const FTerrainRenderInfo & terrain = terrains[ i ];
+
+
 			if (!terrain.IsValid ())
 				{
-				LOG_WARN ( "Skipping invalid terrain at index ", i );
+				LOG_WARN ( "Invalid terrain, skipping" );
 				continue;
 				}
 
 			if (terrain.VertexBuffer == VK_NULL_HANDLE)
 				{
-				LOG_ERROR ( "Terrain ", i, " has invalid vertex buffer" );
+				LOG_ERROR ( "Vertex buffer NULL" );
 				continue;
 				}
 
-				// Заполняем model matrix
+		
+			struct FTerrainPushConstants
+				{
+				glm::mat4x4 model;
+				glm::vec4 terrainParams;
+				} pushConstants;
+
 			pushConstants.model = CEMath::ToGLM ( terrain.Model );
+			pushConstants.terrainParams = glm::vec4 ( 1.0f, 1.0f, 0.001f, 1.0f );
 
-			// Заполняем terrainParams в точном соответствии с шейдером
-			pushConstants.terrainParams.x = terrain.Params.TilingFactor;      // tiling factor
-			pushConstants.terrainParams.y = terrain.Params.HeightScale;       // height scale
-			pushConstants.terrainParams.z = terrain.Params.FogDensity;        // fog density
-			pushConstants.terrainParams.w = terrain.Params.UseTexture ? 1.0f : 0.0f; // use texture flag
-
-			// Обратите внимание: SandHeight, GrassHeight, RockHeight, SnowHeight 
-			// НЕ ПЕРЕДАЮТСЯ в шейдер - они используются только для цветовых градиентов
-			// в функции getHeightColor(), которая использует константы в шейдере
-
-			vkCmdPushConstants (
-				CommandBuffer,
-				terrainLayout,
-				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-				0,
-				sizeof ( pushConstants ),
-				&pushConstants );
-
+			vkCmdPushConstants ( CommandBuffer, terrainLayout,
+								 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+								 0, sizeof ( pushConstants ), &pushConstants );
+		
+			
+			
+			// Bind vertex buffer
 			VkBuffer vertexBuffers [] = { terrain.VertexBuffer };
 			VkDeviceSize offsets [] = { 0 };
 			vkCmdBindVertexBuffers ( CommandBuffer, 0, 1, vertexBuffers, offsets );
+			
 
+			// Draw
 			if (terrain.IndexBuffer != VK_NULL_HANDLE && terrain.IndexCount > 0)
 				{
 				vkCmdBindIndexBuffer ( CommandBuffer, terrain.IndexBuffer, 0, VK_INDEX_TYPE_UINT32 );
+				
 				vkCmdDrawIndexed ( CommandBuffer, terrain.IndexCount, 1, 0, 0, 0 );
+				
 				}
 			else
 				{
 				vkCmdDraw ( CommandBuffer, terrain.VertexCount, 1, 0, 0 );
+				
 				}
 			}
+
+		
 		}

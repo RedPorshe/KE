@@ -234,7 +234,8 @@ FShaderModule CPipelineManager::LoadShaderModule ( const std::string & Filename,
     LogDebug ( "Loading shader module: ", Filename );
     LogDebug ( "  Source exists: ", sourceExists ? "Yes" : "No" );
     LogDebug ( "  SPV exists: ", spvExists ? "Yes" : "No" );
-
+    LogDebug ( "Current working directory: ", std::filesystem::current_path ().string () );
+    LogDebug ( "Full shader path: ", std::filesystem::absolute ( sourceFilename ).string () );
    
     if (sourceExists)
         {
@@ -805,8 +806,8 @@ VkPipeline CPipelineManager::CreateTrianglePipeline ( VkRenderPass RenderPass )
     config.PolygonMode = VK_POLYGON_MODE_FILL;
     config.CullMode = VK_CULL_MODE_BACK_BIT;
     config.FrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    config.DepthTestEnable = VK_TRUE;
-    config.DepthWriteEnable = VK_TRUE;
+    config.DepthTestEnable = VK_FALSE;
+    config.DepthWriteEnable = VK_FALSE;
     config.DepthCompareOp = VK_COMPARE_OP_LESS;
     config.BlendEnable = VK_FALSE;
     config.DynamicStates = GetDefaultDynamicStates ();

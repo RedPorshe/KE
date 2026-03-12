@@ -14,12 +14,8 @@ CWorld::CWorld ( CObject * inOwner, const std::string & displayName )
 	{
 	OwningGameInstance = dynamic_cast< CGameInstance * >( inOwner );
 
-	   // 1. Создаем GameMode если его нет
-	if (!CurrentGameMode)
-		{
-		LOG_WARN ( "[WORLD] No GameMode found, creating default GameMode" );
-		CreateGameMode<CGameMode> ( "GameModeBase" );
-		}
+	
+	
 	}
 
 CWorld::~CWorld ()
@@ -219,7 +215,11 @@ void CWorld::BeginPlay ()
 	bIsPlaying = true;
 	LOG_DEBUG ( "[WORLD] BeginPlay: ", GetName () );
 
-
+	if (!CurrentGameMode)
+		{
+		LOG_WARN ( "[WORLD] No GameMode found, creating default GameMode" );
+		CreateGameMode<CGameMode> ( "GameModeBase" );
+		}
 
 	if (CurrentGameMode)
 		{
@@ -371,7 +371,7 @@ FCameraInfo CWorld::FindActiveCamera ()
 			}
 		}
 
-	
+	LOG_WARN ("Camera not found use fallback camera");
 	float aspectRatio = CEngine::Get ().GetWindow ()->GetAspectRatio ();
 	if (aspectRatio <= 0.0001f) aspectRatio = 16.0f / 9.0f;
 

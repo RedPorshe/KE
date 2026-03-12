@@ -15,7 +15,9 @@ CGameInstance * CGameInstance::Instance = nullptr;
 
 CGameInstance::CGameInstance ( CObject * owner, const std::string & displayName )
 	: Super ( owner, displayName )
-	{}
+	{
+	LOG_DEBUG ( "Gameinstance created : ", GetName () );
+	}
 
 CGameInstance::~CGameInstance ()
 	{

@@ -54,12 +54,14 @@ void CTerrainActor::CreateTerrainComponents ()
     if (!m_TerrainComponent)
         {
         m_TerrainComponent = AddDefaultSubObject<CTerrainComponent> ( GetName () + "_TerrainComponent" );
+        m_TerrainComponent->AttachTo ( RootComponent );
         LOG_DEBUG ( "[TERRAIN ACTOR] Created TerrainComponent: ", m_TerrainComponent->GetName () );
         }
 
     if (!m_TerrainMeshComponent)
         {
         m_TerrainMeshComponent = AddDefaultSubObject<CTerrainMeshComponent> ( GetName () + "_TerrainMesh" );
+        m_TerrainMeshComponent->AttachTo ( RootComponent );
         LOG_DEBUG ( "[TERRAIN ACTOR] Created TerrainMeshComponent: ", m_TerrainMeshComponent->GetName () );
         }
 

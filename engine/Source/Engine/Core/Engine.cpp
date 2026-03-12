@@ -100,7 +100,7 @@ bool CEngine::Initialize ()
 
 	// Устанавливаем все колбэки через диспетчер
 	glfwSetKeyCallback ( Info.WindowHandle, FGLFWDispatcher::KeyCallback );
-	
+
 	glfwSetMouseButtonCallback ( Info.WindowHandle, FGLFWDispatcher::MouseButtonCallback );
 	glfwSetCursorPosCallback ( Info.WindowHandle, FGLFWDispatcher::CursorPositionCallback );
 	glfwSetScrollCallback ( Info.WindowHandle, FGLFWDispatcher::ScrollCallback );
@@ -114,12 +114,7 @@ bool CEngine::Initialize ()
 		return false;
 		}
 
-	// Создаём GameInstance
-	if (!CGameInstance::Create ())
-		{
-		LOG_FATAL ( "Failed to create GameInstance" );
-		return false;
-		}
+
 
 		// Инициализируем CollisionSystem
 	COLLISION_SYSTEM;
@@ -176,7 +171,15 @@ void CEngine::Shutdown ()
 void CEngine::Start ()
 	{
 	//CreateTestWorld ();
+	// Создаём GameInstance
+	if (!CGameInstance::IsCreated ())
+		{
+		if (!CGameInstance::Create ())
+			{
+			LOG_FATAL ( "Failed to create GameInstance" );
 
+			}
+		}
 
 
 	MainLoop ();
@@ -195,7 +198,7 @@ CGameInstance & CEngine::GetGameInstance ()
 
 void CEngine::MainLoop ()
 	{
-	bIsRunning = true;	
+	bIsRunning = true;
 
 	auto & GameInstance = CGameInstance::Get ();
 	GameInstance.Init ();
@@ -217,7 +220,7 @@ void CEngine::MainLoop ()
 				{
 				RequestExit ();
 				}
-			}		
+			}
 		}
 	m_RenderInfo->Clear ();
 	}
@@ -234,7 +237,7 @@ void CEngine::Tick ( float deltaTime )
 		}
 	INPUT_SYSTEM->Update ( deltaTime );
 	CGameInstance::Get ().Tick ( deltaTime );
-	CollisionSystem.Update ( deltaTime ); 
+	CollisionSystem.Update ( deltaTime );
 	}
 
 void CEngine::CalculateDeltaTime ()

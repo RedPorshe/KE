@@ -70,6 +70,7 @@ FTerrainRenderInfo CTerrainMeshComponent::GetTerrainInfo ()
         return Info;
         }
     if (bIsTransformDirty) UpdateTransform ();
+    UpdateTransform ();
 
         // Базовые Vulkan ресурсы
     Info.VertexBuffer = m_VertexBuffer;
@@ -78,8 +79,8 @@ FTerrainRenderInfo CTerrainMeshComponent::GetTerrainInfo ()
     Info.IndexCount = m_IndexCount;
 
     // Матрица трансформации
-   // Info.Model = GetTransformMatrix ();
-    Info.Model = FMat4 (GetLocation(), GetRotationQuat(), GetScale ());
+    Info.Model = GetTransformMatrix ();
+   
 
 
     // Данные о размерах террейна
@@ -254,7 +255,7 @@ FVector CTerrainMeshComponent::CalculateNormal ( int32 x, int32 z ) const
         {
         return FVector ( 0.0f, 1.0f, 0.0f );
         }
-
+   
     return normal / length;
     }
 
