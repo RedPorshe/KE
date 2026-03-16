@@ -1,5 +1,8 @@
 #include "KE/Engine.h"
 #include "CoreMinimal.h"
+#include "KE/Systems/WindowSystem.h"
+#include <chrono>
+
 
 CEngine::CEngine ()
     {
@@ -17,13 +20,15 @@ int CEngine::PreInit ( int argc, char * argv [] )
         {
         ParseCmdLine ( argc, argv );
         }
+
+    RegisterAllSystems ();
+
     LOG_DEBUG ( "Exe path: ", ExePath );
     LOG_DEBUG ( "Assets path: " , GetAssetsPath () );
     LOG_DEBUG ( "Shaders path: " , GetShadersPath () );
     LOG_DEBUG ( "Shader Mesh.vert.spv path: " , GetShaderPath ( "Mesh.vert.spv" ) );
     LOG_DEBUG ( "Textures path: " , GetTexturesPath () );
     LOG_DEBUG ( "Models path: " , GetModelsPath () );
-   
 
    if( !ValidatePaths ())
        {    
@@ -90,6 +95,10 @@ bool CEngine::ValidatePaths () const
     return allGood;
     }
 
+void CEngine::RequestShutdown ()
+    {
+    bIsRunning = false;
+    }
 int CEngine::Init ()
     {
     if (!InitAllSystems ())
@@ -98,6 +107,20 @@ int CEngine::Init ()
         return 1;
         }
     return 0;
+    }
+
+void CEngine::RegisterAllSystems ()
+    {
+    LOG_DEBUG ( "Register Systems..." );
+    auto windowSystem = RegisterSystem<WindowSystem> ();   
+    if (WindowSystem * win = dynamic_cast< WindowSystem * >( windowSystem.get () ))
+        {
+        win->SetEnginePtr ( this );
+        win->SetTitle ( "Game" );
+        win->SetExtent ( 1024, 768 );
+        }
+
+    LOG_DEBUG ("All Systems registered: (", m_systems.size(),") systems");
     }
 
 void CEngine::Shutdown ()
@@ -110,7 +133,19 @@ void CEngine::Shutdown ()
     }
 void CEngine::Run ()
     {
-    LOG_DEBUG ( "Stub" );
+    bIsRunning = true;
+    auto lastTime = std::chrono::high_resolution_clock::now ();
+
+    while (bIsRunning)
+        {
+        auto currentTime = std::chrono::high_resolution_clock::now ();
+        float deltaTime = std::chrono::duration<float> ( currentTime - lastTime ).count ();
+        lastTime = currentTime;
+        for (auto system : m_systems)
+            {
+            system->Update ( deltaTime );
+            }
+        }   
     }
 bool CEngine::PreInitAllSystems ()
     {

@@ -1,5 +1,5 @@
 
-add_library(ke_engine STATIC)
+add_library(ke_engine SHARED)
 
 # Устанавливаем свойство для экспорта/импорта
 target_compile_definitions(ke_engine PRIVATE KE_ENGINE_BUILD)
@@ -20,7 +20,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "Source/*.cxx"
 )
 
-target_sources(ke_engine PRIVATE ${ENGINE_SOURCES} "Include/KE/EngineObject.h" "Include/CoreMinimal.h" "Include/Core/EngineTypes.h")
+target_sources(ke_engine PRIVATE ${ENGINE_SOURCES} "Include/KE/EngineObject.h" "Include/CoreMinimal.h" "Include/Core/EngineTypes.h" "Include/KE/Systems/WindowSystem.h" "Source/KE/Systems/WindowSystem.cpp")
 
 # Линковка с внешними библиотеками
 target_link_libraries(ke_engine 

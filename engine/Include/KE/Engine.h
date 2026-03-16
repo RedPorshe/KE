@@ -5,7 +5,7 @@
 #include "EngineObject.h"
 #include "CoreMinimal.h"
 
-class CEngine
+class KE_API CEngine
     {
     public:
         CEngine ();
@@ -14,7 +14,7 @@ class CEngine
         void Run ();                
         void Shutdown ();
         ~CEngine ();
-
+        void RequestShutdown ();
         const std::string & GetExePath () const { return ExePath; }
 
         std::string GetAssetsPath ( const std::string & relativePath = "" ) const {
@@ -46,8 +46,10 @@ class CEngine
         void ParseCmdLine ( int argc, char * argv [] );
         bool InitAllSystems ();
         bool PreInitAllSystems ();
+        void RegisterAllSystems ();
         TVector<TSystemPtr<IEngineSystem>> m_systems;
-
+        bool bIsRunning = false;
+        bool bIsinitialized { false };
 
 #ifdef WIN32
         static constexpr const char * ASSETS_DIR = "Assets\\";

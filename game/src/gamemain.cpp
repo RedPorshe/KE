@@ -14,8 +14,8 @@ int main ( int argc, char * argv [] )
 	if (ErrorLevel == 0)
 		{
 		LOG_INFO (  "Starting Game init engine"); // in editor another initializing
-		ErrorLevel = Engine.Init ();
-		if (ErrorLevel == 0)
+		ErrorLevel = 0;
+		if (ErrorLevel == Engine.Init ())
 			{
 			Engine.Run ();
 			}
