@@ -1,27 +1,22 @@
-#include <KE/Core/Engine.h>
-#include <KE/Core/EngineInfo.h>
+#include <KE/Engine.h>
 #include <CoreMinimal.h>
 
-int main () {
-    setlocale ( LC_ALL, "ru" );
 
-    LOG_INIT ( "KE_Editor", false, true );
-    LOG_SET_LEVEL (CE::CLogger::CLogLevel::DEBUG);
-    FEngineInfo engineInfo;
-    engineInfo.EngineName = "KE Editor";
-    engineInfo.WindowInfo.Title = "KE Editor";
-    engineInfo.WindowInfo.Width = 1600;
-    engineInfo.WindowInfo.Height = 900;
+int main ( int argc, char * argv [] )
+	{
+	LOG_INIT ( "Editor", false, true );
+#ifdef _DEBUG
+	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::TRACE );
+#else
+	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::INFO );
+#endif // _DEBUG
 
-    if (!CEngine::InitializeEngine ( engineInfo ))
-        {
-        LOG_FATAL ( "Failed to initialize editor engine!" );
-        return EXIT_FAILURE;
-        }
-
-    CEngine::Get ().Start ();
-    CEngine::ShutdownEngine ();
-
-    LOG_SHUTDOWN ();
-    return EXIT_SUCCESS;
-    }
+	CEngine Engine {};
+	int ErrorLevel = Engine.PreInit ( argc, argv );
+	if (ErrorLevel == 0)
+		{
+		LOG_INFO ( "Starting Editor init engine"); // in game another initializing
+		}
+	LOG_SHUTDOWN ();
+	return ErrorLevel;
+	}

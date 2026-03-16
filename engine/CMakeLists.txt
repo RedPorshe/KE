@@ -1,5 +1,5 @@
 
-add_library(ke_engine SHARED)
+add_library(ke_engine STATIC)
 
 # Устанавливаем свойство для экспорта/импорта
 target_compile_definitions(ke_engine PRIVATE KE_ENGINE_BUILD)
@@ -7,10 +7,7 @@ target_compile_definitions(ke_engine PRIVATE KE_ENGINE_BUILD)
 # Инклюд пути - PUBLIC, чтобы были доступны игре/редактору
 target_include_directories(ke_engine 
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/KE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/KE/GameFramework
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/KE/Render
+        ${CMAKE_CURRENT_SOURCE_DIR}/include    
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
@@ -23,7 +20,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "Source/*.cxx"
 )
 
-target_sources(ke_engine PRIVATE ${ENGINE_SOURCES})
+target_sources(ke_engine PRIVATE ${ENGINE_SOURCES} "Include/KE/EngineObject.h" "Include/CoreMinimal.h" "Include/Core/EngineTypes.h")
 
 # Линковка с внешними библиотеками
 target_link_libraries(ke_engine 
