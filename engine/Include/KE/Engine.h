@@ -5,6 +5,8 @@
 #include "EngineObject.h"
 #include "CoreMinimal.h"
 
+struct GLFWwindow;
+
 class KE_API CEngine
     {
     public:
@@ -31,6 +33,17 @@ class KE_API CEngine
         std::string GetModelsPath () const { return GetAssetsPath ( MODELS_DIR ); }
         std::string GetModelPath ( const std::string & modelName ) const {
             return GetModelsPath () + modelName;
+            }
+        GLFWwindow * GetWindowHandle () const;
+        template<typename T>
+        TSharedPtr<T> GetSystem () const
+            {
+            for (auto & system : m_systems)
+                {
+                if (auto casted = std::dynamic_pointer_cast< T >( system ))
+                    return casted;
+                }
+            return nullptr;
             }
 
         bool ValidatePaths () const;

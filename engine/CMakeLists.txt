@@ -10,6 +10,7 @@ target_include_directories(ke_engine
         ${CMAKE_CURRENT_SOURCE_DIR}/include    
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Vulkan/Managers    
 )
 
 # Собираем все исходники (вам нужно будет перечислить все .cpp файлы)
@@ -20,7 +21,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "Source/*.cxx"
 )
 
-target_sources(ke_engine PRIVATE ${ENGINE_SOURCES} "Include/KE/EngineObject.h" "Include/CoreMinimal.h" "Include/Core/EngineTypes.h" "Include/KE/Systems/WindowSystem.h" "Source/KE/Systems/WindowSystem.cpp")
+target_sources(ke_engine PRIVATE ${ENGINE_SOURCES} "Include/KE/EngineObject.h" "Include/CoreMinimal.h" "Include/Core/EngineTypes.h" "Include/KE/Systems/WindowSystem.h" "Source/KE/Systems/WindowSystem.cpp" "Include/KE/Systems/RenderSystem.h" "Source/KE/Systems/RenderSystem.cpp"  )
 
 # Линковка с внешними библиотеками
 target_link_libraries(ke_engine 
@@ -32,11 +33,3 @@ target_link_libraries(ke_engine
         unofficial::shaderc::shaderc
         # Доп. библиотеки только для движка
 )
-
-# Копирование шейдеров (если они есть в движке)
-# Лучше хранить шейдеры в игре/редакторе, но если они в движке:
-# add_custom_command(TARGET ke_engine POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#         ${CMAKE_CURRENT_SOURCE_DIR}/Shaders
-#         $<TARGET_FILE_DIR:ke_engine>/Shaders
-# )

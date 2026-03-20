@@ -2,6 +2,8 @@
 
 #include "KE/EngineObject.h"
 
+struct GLFWwindow;
+
 struct KE_API WindowExtent
 	{
 	uint32_t Width { 800 };
@@ -26,15 +28,15 @@ class KE_API WindowSystem : public IEngineSystem
 		float GetAspectRatio () const  { return Extent.AspectRatio; }
 		void SetExtent ( uint32_t inWidth, uint32_t inHeight )
 			{
-			Extent.Width = inWidth;      // Было Wight
+			Extent.Width = inWidth;     
 			Extent.Height = inHeight;
 			Extent.AspectRatio = static_cast< float >( inWidth ) / static_cast< float >( inHeight );
 			}
-		void * GetWindowHandle () const { return m_WindowHandle; }
+		GLFWwindow * GetWindowHandle () const { return m_WindowHandle; }
 		void ShowCursor ( bool show );
-			
+		std::string GetTitle () const { return m_title; }
 	private:
-		void * m_WindowHandle = nullptr;
+		GLFWwindow * m_WindowHandle = nullptr;
 		bool bIsFullscreen { false };
 		WindowExtent Extent {};
 		std::string m_title { "Kuzbass Engine" };
