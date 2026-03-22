@@ -2,12 +2,24 @@
 #include "CoreMinimal.h"
 #include "KE/Systems/WindowSystem.h"
 #include "KE/Systems/RenderSystem.h"
+#include "KE/Systems/InputSystem.h"
+#include "KE/Systems/CollisionSystem.h"
+#include "KE/Systems/GLFWDispatcher.h"
+
 #include <GLFW/glfw3.h>
 #include <chrono>
+#include <functional>
 
+CEngine * CEngine::Instance = nullptr;
+
+CEngine & CEngine::Get ()
+	{
+	return *Instance;
+	}
 
 CEngine::CEngine ()
 	{
+	Instance = this;
 	LOG_DEBUG ( "Engine Created" );
 	}
 
@@ -15,6 +27,27 @@ CEngine::~CEngine ()
 	{
 	LOG_DEBUG ( "engine destroyed" );
 	}
+
+WindowSystem * CEngine::GetWindow () const
+	{
+	return static_cast < WindowSystem * >( GetSystem<WindowSystem> ().get () );
+	}
+
+RenderSystem * CEngine::GetRenderer () const
+	{
+	return static_cast < RenderSystem * >( GetSystem<RenderSystem> ().get () );
+	}
+
+CInputSystem * CEngine::GetInputSystem () const
+	{
+	return static_cast < CInputSystem * >( GetSystem<CInputSystem> ().get () );
+	}
+
+CCollisionSystem * CEngine::GetCollisionSystem () const
+	{
+	return static_cast < CCollisionSystem * >( GetSystem<CCollisionSystem > ().get () );
+	}
+
 
 int CEngine::PreInit ( int argc, char * argv [] )
 	{
@@ -140,6 +173,15 @@ void CEngine::RegisterAllSystems ()
 		win->SetEnginePtr ( this );
 		win->SetTitle ( "Game" );
 		win->SetExtent ( 1024, 768 );
+		win->OnWindowCreated = [ this ] ( GLFWwindow * window )
+			{
+			auto inputSystem = GetInputSystem ();
+			if (inputSystem)
+				{
+				inputSystem->SetWindow ( window );
+				}
+			};
+
 		}
 
 	auto vulkanSystem = RegisterSystem<RenderSystem> ();
@@ -148,6 +190,17 @@ void CEngine::RegisterAllSystems ()
 		render->SetEnginePtr ( this );
 		render->SetAplicationName ( "App" ); // need apply in Another place
 		render->SetEngineName ( "KuzzbassEngine" );
+		}
+
+	auto InputSystem = RegisterSystem<CInputSystem> ();
+	if (CInputSystem * input = dynamic_cast< CInputSystem * >( InputSystem.get () ))
+		{
+		input->SetEnginePtr ( this );		
+		}
+	auto CollisionSystem = RegisterSystem<CCollisionSystem> ();
+	if (CCollisionSystem * collision = dynamic_cast< CCollisionSystem * >( CollisionSystem.get () ))
+		{
+		collision->SetEnginePtr ( this );
 		}
 
 	LOG_DEBUG ( "All Systems registered: (", m_systems.size (), ") systems" );

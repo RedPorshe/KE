@@ -18,8 +18,11 @@ class KE_API VulkanContext
         void Shutdown ();
         void SetEngineName ( const std::string & inName ); 
         void SetAplicationName ( const std::string & inName );
+        VkInfo * GetInfo () const { return m_info; }
     private:
         GLFWwindow * m_window = nullptr;
         bool bIsInitialized = false;
         VkInfo * m_info = nullptr;
+
+        
     };

@@ -17,7 +17,7 @@ struct KE_API VKManagers
 	TSharedPtr<IVKManager> DescriptorManager;
 	TSharedPtr<IVKManager> PipelineManager;
 	TSharedPtr<IVKManager> RenderPassManager;
-	TSharedPtr<IVKManager> SyncManager;
+	TSharedPtr<IVKManager> SyncManager;	
 	void Shutdown ();
 	};
 

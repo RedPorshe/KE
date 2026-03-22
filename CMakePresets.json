@@ -29,7 +29,7 @@
             },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_TOOLCHAIN_FILE": "D:/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
+              //  "CMAKE_TOOLCHAIN_FILE": "D:/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
             }
         },
         {
@@ -38,7 +38,7 @@
             "inherits": "x64-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_TOOLCHAIN_FILE": "D:/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
+              //  "CMAKE_TOOLCHAIN_FILE": "D:/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
             }
         }
     ],

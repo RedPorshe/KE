@@ -14,6 +14,11 @@ SwapchainManager::~SwapchainManager ()
 	Shutdown ();
 	}
 
+uint32_t SwapchainManager::GetImagesCount ()
+	{
+	return static_cast<uint32_t> (m_images.size ());
+	}
+
 bool SwapchainManager::Init ()
 	{
 	LogDebug ( "Initializing Swapchain Manager" );
@@ -35,6 +40,13 @@ bool SwapchainManager::Init ()
 		LogError ( "Failed to get swapchain images" );
 		return false;
 		}
+	CreateImageViews ();
+	if (m_ImageViews.empty ())
+		{
+		LogError ( "Fail to create imageviews" );
+		return false;
+		}
+
 	bIsInitialized = true;
 	LogInfo ( "Swapchain created successfully - Images: ", m_images.size () );
 	return true;
@@ -370,7 +382,7 @@ bool SwapchainManager::Present ( VkSemaphore WaitSemaphore, uint32_t ImageIndex 
 		LogError ( "Failed to present image: ", static_cast< int >( result ) );
 		return false;
 		}
-
+	
 	return true;
 	}
 

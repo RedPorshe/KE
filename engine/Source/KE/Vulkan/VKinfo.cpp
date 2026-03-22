@@ -2,11 +2,12 @@
 
 void VKManagers::Shutdown ()
 	{
-    SyncManager.reset ();
-    PipelineManager.reset ();
     DescriptorManager.reset ();
-    CommandManager.reset ();
     BufferManager.reset ();
+    PipelineManager.reset ();
+    RenderPassManager.reset ();
+    SyncManager.reset ();
+    CommandManager.reset ();
     SwapchainManager.reset ();
     DeviceManager.reset ();
     InstanceManager.reset ();

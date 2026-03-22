@@ -82,15 +82,11 @@ FBuffer BufferManager::CreateBuffer ( VkDeviceSize Size, VkBufferUsageFlags Usag
 	return buffer;
 	}
 
+
 FBuffer BufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Data )
-	{
+    {
     LogDebug ( "Creating vertex buffer - Size: ", Size, ", Data: ", ( void * ) Data );
     FBuffer buffer;
-    VkDevice device = VK_NULL_HANDLE;
-    if (DeviceManager * deviceManager = dynamic_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () ))
-        {
-        device = deviceManager->GetDevice ();
-        }
 
     if (Size == 0)
         {
@@ -117,36 +113,6 @@ FBuffer BufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Data
             {
             LogDebug ( "Copying data from staging to device buffer" );
             CopyBufferToBuffer ( stagingBuffer, buffer, Size );
-
-            FBuffer readBackBuffer = CreateBuffer ( Size,
-                                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
-
-            if (readBackBuffer.IsValid ())
-                {
-                    // Копируем из device-local буфера в host-visible
-                CopyBufferToBuffer ( buffer, readBackBuffer, Size );
-
-                // Читаем данные
-                void * mappedData;
-               
-
-                vkMapMemory ( device, readBackBuffer.Memory, 0, Size, 0, &mappedData );
-
-                LogDebug ( "=== VERTEX BUFFER DATA VERIFICATION ===" );
-                const float * floatData = static_cast< const float * >( mappedData );
-                for (int i = 0; i < 3; i++)
-                    {
-                    int offset = i * 6;
-                    LogDebug ( "  Vertex ", i,
-                               ": pos(", floatData[ offset ], ",", floatData[ offset + 1 ], ",", floatData[ offset + 2 ],
-                               ") color(", floatData[ offset + 3 ], ",", floatData[ offset + 4 ], ",", floatData[ offset + 5 ], ")" );
-                    }
-                LogDebug ( "========================================" );
-
-                vkUnmapMemory ( device, readBackBuffer.Memory );
-                DestroyBuffer ( readBackBuffer );
-                }
             }
 
         DestroyBuffer ( stagingBuffer );
@@ -169,8 +135,8 @@ FBuffer BufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Data
         }
 
     return buffer;
+    }
 
-	}
 
 FBuffer BufferManager::CreateIndexBuffer ( VkDeviceSize Size, const void * Data )
     {
@@ -222,8 +188,9 @@ FBuffer BufferManager::CreateUniformBuffer ( VkDeviceSize Size )
 
 FBuffer BufferManager::CreateStagingBuffer ( VkDeviceSize Size, const void * Data )
     {
+        // Staging buffer должен иметь флаг TRANSFER_SRC_BIT, а не TRANSFER_DST_BIT
     FBuffer buffer = CreateBuffer ( Size,
-                                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,  // ← Исправлено!
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
 
     if (buffer.IsValid () && Data)

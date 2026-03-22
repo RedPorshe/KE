@@ -22,8 +22,10 @@ class SwapchainManager final : public IVKManager
 		void CreateImageViews ();
 		bool CreateSwapchain ( VkSwapchainKHR OldSwapchain = VK_NULL_HANDLE);
 		bool GetImages ();
+		uint32_t GetImagesCount ();
 		void SetSwapChainRecreated ( bool val ) { bIsSwapchainRecreated = val; }
 		void CleanupSwapChain ();
+		TVector< VkImageView> GetImageViews () {return m_ImageViews	;}
 
 		VkSurfaceFormatKHR ChooseSurfaceFormat ( const std::vector<VkSurfaceFormatKHR> & formats );
 		VkPresentModeKHR ChoosePresentMode ( const std::vector<VkPresentModeKHR> & presentModes );

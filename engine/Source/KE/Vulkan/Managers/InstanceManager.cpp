@@ -10,27 +10,33 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback (
     const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData,
     void * pUserData )
     {
-        // Получаем указатель на менеджер
     InstanceManager * manager = static_cast< InstanceManager * >( pUserData );
-
     if (!manager) return VK_FALSE;
 
-    // Фильтруем сообщения
+    // Формируем строку с ID сообщения, если есть
+    std::string messageId = "";
+    if (pCallbackData->pMessageIdName)
+        {
+        messageId = std::string ( "[" ) + pCallbackData->pMessageIdName + "] ";
+        }
+
+        // Логируем все сообщения без фильтрации
     switch (messageSeverity)
         {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-                manager->LogTrace ( "Vulkan: ", pCallbackData->pMessage );
+                manager->LogTrace ( "Vulkan: ", messageId, pCallbackData->pMessage );
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-                manager->LogInfo ( "Vulkan: ", pCallbackData->pMessage );
+                manager->LogInfo ( "Vulkan: ", messageId, pCallbackData->pMessage );
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-                manager->LogWarn ( "Vulkan: ", pCallbackData->pMessage );
+                manager->LogWarn ( "Vulkan: ", messageId, pCallbackData->pMessage );
                 break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-                manager->LogError ( "Vulkan: ", pCallbackData->pMessage );
+                manager->LogError ( "Vulkan: ", messageId, pCallbackData->pMessage );
                 break;
             default:
+                manager->LogDebug ( "Vulkan: ", messageId, pCallbackData->pMessage );
                 break;
         }
 
@@ -142,13 +148,19 @@ bool InstanceManager::CreateInstance ()
     appInfo.applicationVersion = VK_MAKE_VERSION ( 1, 0, 0 );
     appInfo.pEngineName = m_info->EngineName.c_str ();
     appInfo.engineVersion = VK_MAKE_VERSION ( 1, 0, 0 );
-    appInfo.apiVersion = VK_API_VERSION_1_3;
+    appInfo.apiVersion = VK_API_VERSION_1_4;
 
     // Получаем необходимые расширения от GLFW
     uint32_t glfwExtensionCount = 0;
     const char ** glfwExtensions = glfwGetRequiredInstanceExtensions ( &glfwExtensionCount );
 
     std::vector<const char *> extensions ( glfwExtensions, glfwExtensions + glfwExtensionCount );
+   
+ 
+    extensions.push_back ( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
+    extensions.push_back ( VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME );
+    extensions.push_back ( VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME );
+       
 
 #ifdef _DEBUG
     // Добавляем расширение для отладки

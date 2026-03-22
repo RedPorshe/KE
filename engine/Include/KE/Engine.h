@@ -15,6 +15,7 @@ class KE_API CEngine
         int Init ();
         void Run ();                
         void Shutdown ();
+        static CEngine & Get ();
         ~CEngine ();
         void RequestShutdown ();
         const std::string & GetExePath () const { return ExePath; }
@@ -46,6 +47,11 @@ class KE_API CEngine
             return nullptr;
             }
 
+        class WindowSystem * GetWindow () const;
+        class RenderSystem * GetRenderer () const;
+        class CInputSystem * GetInputSystem () const;
+        class CCollisionSystem * GetCollisionSystem () const;
+
         bool ValidatePaths () const;
 
         template<typename T, typename... Args>
@@ -56,6 +62,7 @@ class KE_API CEngine
             }
 
     private:
+        static CEngine * Instance;
         void ParseCmdLine ( int argc, char * argv [] );
         bool InitAllSystems ();
         bool PreInitAllSystems ();

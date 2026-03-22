@@ -7,7 +7,7 @@ int main ( int argc, char * argv [] )
 #ifdef _DEBUG
 	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::TRACE );
 #else
-	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::INFO );
+	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::TRACE );
 #endif // _DEBUG
 	CEngine Engine {};
 	int ErrorLevel = Engine.PreInit (argc,argv );
