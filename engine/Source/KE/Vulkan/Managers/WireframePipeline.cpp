@@ -305,10 +305,10 @@ void CWireframeGenerator::GenerateTerrainWireframe ( std::vector<FWireframeVerte
                 OutVertices.push_back ( { p11, Color } );
 
                 // Вторая диагональ p10-p01 (опционально)
-                // FVector p10 = TerrainComp->GetWorldPositionAt(x + 1, z);
-                // FVector p01 = TerrainComp->GetWorldPositionAt(x, z + 1);
-                // OutVertices.push_back({p10, Color});
-                // OutVertices.push_back({p01, Color});
+                 FVector p10 = TerrainComp->GetWorldPositionAt(x + 1, z);
+                 FVector p01 = TerrainComp->GetWorldPositionAt(x, z + 1);
+                 OutVertices.push_back({p10, Color});
+                 OutVertices.push_back({p01, Color});
                 }
             }
         }

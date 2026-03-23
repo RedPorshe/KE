@@ -9,6 +9,7 @@
 #include "KE/Vulkan/Managers/PipelineManager.h"
 #include "KE/Vulkan/Managers/RenderPassManager.h"
 #include "KE/Vulkan/Managers/DescriptorManager.h"
+#include "KE/Vulkan/Managers/WireframePipeline.h"
 #include "KE/Vulkan/Managers/BufferManager.h"
 #include "KE/Vulkan/Managers/DeviceManager.h"
 #include "KE/Vulkan/Managers/SyncManager.h"
@@ -878,84 +879,105 @@ bool RenderSystem::RenderWorld ()
 
 		return true;
 		}
+
 	bool RenderSystem::RenderTerrain ( VkCommandBuffer cmd )
 		{
-		const auto & terrains = m_RenderInfo.Terrains;
-		if (terrains.empty ())
-			{
-			return true; // Нет террейнов для рендера
-			}
+	
 
-		if (cmd == VK_NULL_HANDLE)
+		if (m_RenderInfo.Terrains.empty ())
 			{
-			LogError ( "RenderTerrain: CommandBuffer is VK_NULL_HANDLE" );
-			return false;
+			LogTrace ( "No terrains to render" );
+			return true;
 			}
 
 		uint32_t currentFrame = SyncMgr->GetCurrentFrame ();
+
 		if (currentFrame >= m_FrameDescriptorSets.size ())
 			{
 			LogError ( "RenderTerrain: currentFrame ", currentFrame, " out of range (size: ", m_FrameDescriptorSets.size (), ")" );
 			return false;
 			}
-		// Получаем пайплайн для террейна
+		// Pipeline checks
 		VkPipeline terrainPipeline = PipelineMgr->GetPipeline ( "TerrainPipeline" );
 		VkPipelineLayout terrainLayout = PipelineMgr->GetPipelineLayout ( "TerrainLayout" );
 
 		if (terrainPipeline == VK_NULL_HANDLE || terrainLayout == VK_NULL_HANDLE)
 			{
-			LogError ( "Terrain pipeline or layout not available" );
+			LogError ( "Pipeline or layout NULL" );
 			return false;
 			}
 
 		vkCmdBindPipeline ( cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, terrainPipeline );
 
-		// Bind global descriptor set
-		if (currentFrame < m_FrameDescriptorSets.size () &&
-			 m_FrameDescriptorSets[ currentFrame ].GlobalSet != VK_NULL_HANDLE)
+		// Descriptor sets
+		VkDescriptorSet globalSet = VK_NULL_HANDLE;
+		if (currentFrame < m_FrameDescriptorSets.size ())
+			globalSet = m_FrameDescriptorSets[ currentFrame ].GlobalSet;
+
+
+		if (globalSet != VK_NULL_HANDLE)
 			{
-			VkDescriptorSet sets [] = { m_FrameDescriptorSets[ currentFrame ].GlobalSet };
+			VkDescriptorSet sets[ 1 ] = { globalSet };
 			vkCmdBindDescriptorSets ( cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  terrainLayout, 0, 1, sets, 0, nullptr );
+
 			}
 
-			// Render each terrain
-		for (const auto & terrain : terrains)
+		const auto & terrains = m_RenderInfo.Terrains;
+
+
+		for (size_t i = 0; i < terrains.size (); i++)
 			{
+
+			const FTerrainRenderInfo & terrain = terrains[ i ];
+
+
 			if (!terrain.IsValid ())
 				{
-				LogWarn ( "Skipping invalid terrain" );
+				LogWarn ( "Invalid terrain, skipping" );
 				continue;
 				}
 
-				// Push constants for terrain
+			if (terrain.VertexBuffer == VK_NULL_HANDLE)
+				{
+				LogError ( "Vertex buffer NULL" );
+				continue;
+				}
+
+
 			struct FTerrainPushConstants
 				{
 				glm::mat4x4 model;
-				glm::vec4 params; // x: scale, y: height scale, z: tiling, w: unused
+				glm::vec4 terrainParams;
 				} pushConstants;
 
 			pushConstants.model = CEMath::ToGLM ( terrain.Model );
-			pushConstants.params = glm::vec4 ( 1.0f, 1.0f, 0.05f, 1.0f );
+			pushConstants.terrainParams = glm::vec4 ( 1.0f, 1.0f, 0.001f, 1.0f );
 
 			vkCmdPushConstants ( cmd, terrainLayout,
 								 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 								 0, sizeof ( pushConstants ), &pushConstants );
 
-			   // Bind vertex buffer
+
+
+			// Bind vertex buffer
 			VkBuffer vertexBuffers [] = { terrain.VertexBuffer };
 			VkDeviceSize offsets [] = { 0 };
 			vkCmdBindVertexBuffers ( cmd, 0, 1, vertexBuffers, offsets );
+
 
 			// Draw
 			if (terrain.IndexBuffer != VK_NULL_HANDLE && terrain.IndexCount > 0)
 				{
 				vkCmdBindIndexBuffer ( cmd, terrain.IndexBuffer, 0, VK_INDEX_TYPE_UINT32 );
+
 				vkCmdDrawIndexed ( cmd, terrain.IndexCount, 1, 0, 0, 0 );
+
 				}
 			else
 				{
 				vkCmdDraw ( cmd, terrain.VertexCount, 1, 0, 0 );
+
 				}
 			}
 
@@ -964,14 +986,129 @@ bool RenderSystem::RenderWorld ()
 
 	bool RenderSystem::RenderWireframe ( VkCommandBuffer cmd )
 		{
-		const auto & collisions = m_RenderInfo.DebugCollisions;
-		if (m_RenderInfo.bDrawCollisions && !collisions.empty ())
+		m_RenderInfo;
+		uint32_t currentFrame = SyncMgr->GetCurrentFrame ();
+
+		if (!m_RenderInfo.bDrawCollisions || m_RenderInfo.DebugCollisions.empty ())
 			{
-			static int logCount = 0;
-			if (logCount < 5)
+			return true;
+			}
+
+		if (cmd == VK_NULL_HANDLE)
+			{
+			LogError ( "RenderDebugWireFrame: CommandBuffer is NULL" );
+			return false;
+			}
+
+		if (currentFrame >= m_FrameDescriptorSets.size ())
+			{
+			LogError ( "RenderWireframe: currentFrame ", currentFrame, " out of range (size: ", m_FrameDescriptorSets.size (), ")" );
+			return false;
+			}
+
+		VkPipeline wireframePipeline = PipelineMgr->GetPipeline ( "WireframePipeline" );
+		VkPipelineLayout wireframeLayout = PipelineMgr->GetPipelineLayout ( "WireframePipelineLayout" );
+
+		if (wireframePipeline == VK_NULL_HANDLE)
+			{
+			LogError ( "RenderDebugWireFrame: wireframePipeline is NULL" );
+			return false;
+			}
+
+		if (wireframeLayout == VK_NULL_HANDLE)
+			{
+			LogError ( "RenderDebugWireFrame: wireframeLayout is NULL" );
+			return false;
+			}
+
+		vkCmdBindPipeline ( cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, wireframePipeline );
+
+		// Bind global descriptor set if valid
+		VkDescriptorSet globalSet = VK_NULL_HANDLE;
+		if (currentFrame < m_FrameDescriptorSets.size ())
+			{
+			globalSet = m_FrameDescriptorSets[ currentFrame ].GlobalSet;
+			}
+
+		if (globalSet != VK_NULL_HANDLE)
+			{
+			VkDescriptorSet sets[ 1 ] = { globalSet };
+			vkCmdBindDescriptorSets (
+				cmd,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				wireframeLayout,
+				0, 1, sets,
+				0, nullptr );
+			}
+
+		CWireframeGenerator generator;
+
+		for (const auto & collision : m_RenderInfo .DebugCollisions)
+			{
+			if (!collision.IsValid ()) continue;
+
+			std::vector<FWireframeVertex> vertices;
+
+			switch (collision.ShapeType)
 				{
-				LogDebug ( "RenderWireframe: ", collisions.size (), " collisions detected (rendering not implemented yet)" );
-				logCount++;
+					case ECollisionShape::SPHERE:
+						generator.GenerateSphere ( vertices, collision.WorldLocation,
+												   collision.Params.Sphere.Radius, collision.DebugColor );
+						break;
+					case ECollisionShape::BOX:
+						generator.GenerateBox ( vertices, collision.WorldLocation,
+												collision.WorldRotation, collision.Params.Box.HalfExtents, collision.DebugColor );
+						break;
+					case ECollisionShape::CAPSULE:
+						generator.GenerateCapsule ( vertices, collision.WorldLocation,
+													collision.WorldRotation, collision.Params.Capsule.Radius,
+													collision.Params.Capsule.HalfHeight, collision.DebugColor );
+						break;
+					case ECollisionShape::CYLINDER:
+						generator.GenerateCylinder ( vertices, collision.WorldLocation,
+													 collision.WorldRotation, collision.Params.Cylinder.Radius,
+													 collision.Params.Cylinder.Height, collision.DebugColor );
+						break;
+					case ECollisionShape::CONE:
+						generator.GenerateCone ( vertices, collision.WorldLocation,
+												 collision.WorldRotation, collision.Params.Cone.Radius,
+												 collision.Params.Cone.Height, collision.DebugColor );
+						break;
+					default:
+						continue;
+				}
+
+			if (vertices.empty ()) continue;
+
+			struct FWireframePushConstants
+				{
+				glm::mat4x4 model;
+				} wireframePush;
+
+			wireframePush.model = CEMath::ToGLM ( FMat4 (
+				collision.WorldLocation,
+				collision.WorldRotation,
+				collision.WorldScale ) );
+
+			vkCmdPushConstants (
+				cmd,
+				wireframeLayout,
+				VK_SHADER_STAGE_VERTEX_BIT,
+				0,
+				sizeof ( wireframePush ),
+				&wireframePush );
+
+			FBuffer tempBuffer = BuffMgr->CreateVertexBuffer ( vertices );
+
+			if (tempBuffer.IsValid ())
+				{
+				VkBuffer vertexBuffers [] = { tempBuffer.Buffer };
+				VkDeviceSize offsets [] = { 0 };
+				vkCmdBindVertexBuffers ( cmd, 0, 1, vertexBuffers, offsets );
+				vkCmdDraw ( cmd, static_cast< uint32_t >( vertices.size () ), 1, 0, 0 );
+
+				
+				BuffMgr->DestroyBuffer ( tempBuffer ); 
 				}
 			}
 		return true;

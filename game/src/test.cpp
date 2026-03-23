@@ -26,14 +26,15 @@ void CreateTestWorld ()
 	if (level)
 		{
 		auto terr = level->SpawnActor<CTerrainActor> ();
-		terr->GenerateHilly ( 25, 45, 5.f );
+		
 		terr->GenerateNoise ( 50, 50, 50.f );
 		terr->SetActorLocation ( FVector::Zero (), true );
 		auto startpoint = level->SpawnActorByClass ( "CPlayerStart", "PlayerStart", FVector ( 100.f, 100.f, 100.f ) );
-		startpoint->SetActorLocation ( { 50.f, 150.f, 50.f }, true );
+		startpoint->SetActorLocation ( { -50, -725, -500 }, true );
 		GI->GetWorld ()->CreateGameMode<CGameMode> ();
 		auto gamemode = GI->GetWorld ()->GetGameMode ();
 		gamemode->SetDefaultPawnClass ( "myChar" );
+		terr->SetDrawCollisions ( true );
 		}
 	}
 
@@ -46,7 +47,7 @@ myChar::myChar ( CObject * iowner, const std::string & inname ) :Super(iowner,in
 		{
 		Mesh->ResizeCube(1.f);
 		}
-	
+	SetDrawCollisions ( true );
 	}
 
 void myChar::BeginPlay ()

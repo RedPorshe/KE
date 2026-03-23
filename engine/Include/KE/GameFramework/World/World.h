@@ -70,8 +70,12 @@ class KE_API CWorld : public CObject
         LevelType * CreateLevel ( const std::string & name = "Level", Args&&... args );
 
     protected:
+        void CreateDefaultCameraPawn ();
         bool HasAnyActorWithDebugCollisions () const;
         FCameraInfo CachedCamera {};
+        bool foundPlayerCamera = false;
+        bool bIsUseDefaultCamera = false;
+        class CameraPawnActor * DefaultCameraActor = nullptr;
     };
 
 #include "KE/GameFramework/GameMode.h"

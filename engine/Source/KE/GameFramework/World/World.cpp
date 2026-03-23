@@ -5,6 +5,8 @@
 #include "KE/Vulkan/RenderInfo.h"
 #include "KE/Systems/WindowSystem.h"
 #include "KE/GameFramework/Actors/Actor.h"
+#include "KE/GameFramework/Actors/Pawns/CameraPawn.h"
+#include "KE/GameFramework/Actors/Controllers/Controller.h"
 #include "KE/GameFramework/Camera/CameraComponent.h"
 #include "KE/Engine.h"
 #include <algorithm>
@@ -13,9 +15,15 @@ CWorld::CWorld ( CObject * inOwner, const std::string & displayName )
 	: Super ( inOwner, displayName )
 	{
 	OwningGameInstance = dynamic_cast< CGameInstance * >( inOwner );
+	bIsUseDefaultCamera = false;
+	}
 
-
-
+void CWorld::CreateDefaultCameraPawn ()
+	{
+	if (CurrentLevel)
+		{
+		DefaultCameraActor = CurrentLevel->SpawnActor<CameraPawnActor> ( "DefaultCameraActor" );
+		}
 	}
 
 CWorld::~CWorld ()
@@ -226,9 +234,10 @@ void CWorld::BeginPlay ()
 		CurrentGameMode->StartPlay ();
 		}
 
-	for (auto & level : Levels)
+	if (CurrentLevel)
 		{
-		level->BeginPlay ();
+		CreateDefaultCameraPawn ();
+		CurrentLevel->BeginPlay ();
 		}
 	}
 
@@ -351,54 +360,56 @@ bool CWorld::HasAnyActorWithDebugCollisions () const
 FCameraInfo CWorld::FindActiveCamera ()
 	{
 	FCameraInfo Info {};
+	foundPlayerCamera = false;
 
-	// Сначала ищем активную камеру в уровне
 	if (CurrentLevel)
 		{
 		const auto & actors = CurrentLevel->GetActors ();
 		for (CActor * actor : actors)
 			{
-			CCameraComponent * camera = actor->FindComponent<CCameraComponent> ();
-			if (camera && camera->IsVisible ())
+
+			if (actor->GetName () != "DefaultCameraActor")
 				{
-				float aspectRatio = CEngine::Get ().GetWindow ()->GetAspectRatio ();
-				if (aspectRatio <= 0.0f) aspectRatio = 16.0f / 9.0f;
+				CCameraComponent * camera = actor->FindComponent<CCameraComponent> ();
+				if (camera && camera->IsVisible ())
+					{
+					float aspectRatio = CEngine::Get ().GetWindow ()->GetAspectRatio ();
+					if (aspectRatio <= 0.0f) aspectRatio = 16.0f / 9.0f;
 
-				Info = camera->GetCameraInfo ( aspectRatio );
-
-				return Info;
+					Info = camera->GetCameraInfo ( aspectRatio );
+					foundPlayerCamera = true;
+					return Info;
+					}
 				}
 			}
 		}
-	static int camerawarncount = 0;
-	if (camerawarncount < 2)
+
+	if (!foundPlayerCamera && !bIsUseDefaultCamera)
 		{
-		LOG_WARN ( "Camera not found use fallback camera" );
-		camerawarncount++;
+		if (CurrentLevel)
+			{
+			auto GameMode = GetGameMode ();
+			if (GameMode)
+				{
+				auto controller = GameMode->GetPlayerControllers ()[ 0 ];
+				controller->Possess ( DefaultCameraActor );
+				bIsUseDefaultCamera = true;
+				}			
+			}
 		}
-	float aspectRatio = CEngine::Get ().GetWindow ()->GetAspectRatio ();
-	if (aspectRatio <= 0.0001f) aspectRatio = 16.0f / 9.0f;
+	if (bIsUseDefaultCamera)
+		{
+		CCameraComponent * camera = DefaultCameraActor->FindComponent<CCameraComponent> ();
+		if (camera && camera->IsVisible ())
+			{
+			float aspectRatio = CEngine::Get ().GetWindow ()->GetAspectRatio ();
+			if (aspectRatio <= 0.0f) aspectRatio = 16.0f / 9.0f;
 
+			auto defInfo = camera->GetCameraInfo ( aspectRatio );
 
-	Info.Location = { 500.f, 200.f, 300.f };
-	Info.ViewTarget = { 500.f, 43.f, 500.f };
-	Info.NearPlane = 0.1f;
-	Info.FarPlane = 2000.f;
-	Info.FOV = 90.f;
-
-
-	Info.ViewMatrix = FMat4::LookAtMatrix (
-		Info.Location,
-		Info.ViewTarget,
-		FVector::Up ()
-	);
-
-	Info.ProjectionMatrix = FMat4::PerspectiveMatrix (
-		Info.FOV * CEMath::DEG_TO_RAD,
-		aspectRatio,
-		Info.NearPlane,
-		Info.FarPlane
-	);
+			Info = defInfo;
+			}
+		}
 
 	return Info;
 	}
