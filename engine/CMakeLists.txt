@@ -5,7 +5,7 @@ add_library(ke_engine SHARED)
 # Устанавливаем свойство для экспорта/импорта
 target_compile_definitions(ke_engine PRIVATE KE_ENGINE_BUILD)
 
-# Инклюд пути - PUBLIC, чтобы были доступны игре/редактору
+# Инклюд пути
 target_include_directories(ke_engine 
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -21,6 +21,10 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "Source/*.cxx"
 )
 
+target_include_directories(ke_engine PUBLIC
+    ${rapidjson_SOURCE_DIR}/include
+)
+
 target_sources(ke_engine PRIVATE ${ENGINE_SOURCES})
 
 # Линковка с внешними библиотеками
@@ -28,21 +32,8 @@ target_link_libraries(ke_engine
     PUBLIC
         Vulkan::Vulkan
         glfw
-    PRIVATE
-        
+        RapidJSON
 )
-
-# Добавляем RapidJSON include директории (header-only библиотека)
-if(TARGET RapidJSON)
-    target_link_libraries(ke_engine PUBLIC RapidJSON)
-else()
-    # Если цель RapidJSON не создана, добавляем include директории вручную
-    target_include_directories(ke_engine PUBLIC
-        ${rapidjson_SOURCE_DIR}/include
-    )
-endif()
-
-
 
 # Для Windows экспорт символов
 if(WIN32)

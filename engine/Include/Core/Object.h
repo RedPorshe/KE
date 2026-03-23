@@ -15,10 +15,11 @@
 
 // Forward declarations
 class CObjectFactory;
-//#include <rapidjson/document.h>
-//#include <rapidjson/writer.h>
-//#include <rapidjson/stringbuffer.h>
-//#include <rapidjson/prettywriter.h>
+
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
 
 // Base macros for class declaration - УПРОЩЕННЫЕ
 #define CHUDDO_DECLARE_CLASS(ClassName, BaseClassName) \
@@ -26,8 +27,8 @@ public: \
     using Super = BaseClassName; \
     static const char* StaticClassName() { return #ClassName; } \
     static const char* StaticBaseClassName() { return #BaseClassName; } \
-    virtual const char* GetObjectClassName() const override { return #ClassName; } 
-   // virtual void SerializeProperties(rapidjson::Value& jsonValue, rapidjson::Document::AllocatorType& allocator) const override { Super::SerializeProperties(jsonValue, allocator); } \
+    virtual const char* GetObjectClassName() const override { return #ClassName; } \
+    virtual void SerializeProperties(rapidjson::Value& jsonValue, rapidjson::Document::AllocatorType& allocator) const override { Super::SerializeProperties(jsonValue, allocator); } \
     virtual void DeserializeProperties(const rapidjson::Value& jsonValue) override { Super::DeserializeProperties(jsonValue); }
 
 #define CHUDDO_DECLARE_ABSTRACT_CLASS(ClassName, BaseClassName) \
@@ -35,9 +36,9 @@ public: \
     using Super = BaseClassName; \
     static const char* StaticClassName() { return #ClassName; } \
     static const char* StaticBaseClassName() { return #BaseClassName; } \
-    virtual const char* GetObjectClassName() const override { return #ClassName; } 
-  //  virtual void SerializeProperties(rapidjson::Value& jsonValue, rapidjson::Document::AllocatorType& allocator) const override { Super::SerializeProperties(jsonValue, allocator); } \
-  //  virtual void DeserializeProperties(const rapidjson::Value& jsonValue) override { Super::DeserializeProperties(jsonValue); }
+    virtual const char* GetObjectClassName() const override { return #ClassName; } \
+    virtual void SerializeProperties(rapidjson::Value& jsonValue, rapidjson::Document::AllocatorType& allocator) const override { Super::SerializeProperties(jsonValue, allocator); } \
+    virtual void DeserializeProperties(const rapidjson::Value& jsonValue) override { Super::DeserializeProperties(jsonValue); }
 
 class KE_API CObject
     {
@@ -47,11 +48,11 @@ class KE_API CObject
         static const char * StaticClassName () { return "CObject"; }
         static const char * StaticBaseClassName () { return ""; }
         virtual const char * GetObjectClassName () const { return "CObject"; }
-      //  virtual void SerializeProperties ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const;
-     //   virtual void DeserializeProperties ( const rapidjson::Value & jsonValue );
+        virtual void SerializeProperties ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const;
+        virtual void DeserializeProperties ( const rapidjson::Value & jsonValue );
 
     private:
-        // Thread-safe UUID generator
+        
         static std::string GenerateUUID ()
             {
             static std::random_device rd;
@@ -75,12 +76,12 @@ class KE_API CObject
         CObject ( const CObject & ) = delete;
         CObject & operator=( const CObject & ) = delete;
 
-        // Разрешаем перемещение (опционально)
+       
         CObject ( CObject && ) = default;
         CObject & operator=( CObject && ) = default;
 
 
-        // Basic getters
+       
         CObject * GetOwner () const { return ObjectOwner; }
         bool HasOwner () const { return GetOwner () != nullptr; }
 
@@ -212,29 +213,29 @@ class KE_API CObject
             // === JSON Serialization Methods ===
 
             // Main serialization method
-      //  virtual void Serialize ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const;
+        virtual void Serialize ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const;
 
         // Main deserialization method
-      //  virtual void Deserialize ( const rapidjson::Value & jsonValue );
+        virtual void Deserialize ( const rapidjson::Value & jsonValue );
 
         // Convert object to JSON string
-      //  std::string ToJSON ( bool pretty = false ) const;
+        std::string ToJSON ( bool pretty = false ) const;
 
         // Load object from JSON string
-     //   bool FromJSON ( const std::string & jsonString );
+        bool FromJSON ( const std::string & jsonString );
 
         // Save object to file
-     //   bool SaveToFile ( const std::string & filename, bool pretty = true ) const;
+        bool SaveToFile ( const std::string & filename, bool pretty = true ) const;
 
         // Load object from file
-      //  bool LoadFromFile ( const std::string & filename );
+        bool LoadFromFile ( const std::string & filename );
 
         // Static methods for creating objects from JSON
-       /* static std::unique_ptr<CObject> CreateFromJSON ( const std::string & jsonString );
-        static std::unique_ptr<CObject> LoadFromJSONFile ( const std::string & filename );*/
+        static std::unique_ptr<CObject> CreateFromJSON ( const std::string & jsonString );
+        static std::unique_ptr<CObject> LoadFromJSONFile ( const std::string & filename );
 
         // Utility to get JSON schema for this object type
-     //   std::string GetJSONSchema () const;
+        std::string GetJSONSchema () const;
 
     protected:
         CObject * ObjectOwner = nullptr;

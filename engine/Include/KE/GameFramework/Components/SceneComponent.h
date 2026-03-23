@@ -11,6 +11,7 @@ class KE_API CSceneComponent : public CTransformComponent
 		virtual void InitComponent () override;
 		virtual void Tick ( float DeltaTime ) override;
 		virtual void OnBeginPlay () override;	
+		void OnEndPlay () override;
 	};
 
 REGISTER_CLASS_FACTORY ( CSceneComponent );

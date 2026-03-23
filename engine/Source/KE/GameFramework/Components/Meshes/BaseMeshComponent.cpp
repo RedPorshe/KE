@@ -36,21 +36,14 @@ void CBaseMeshComponent::InitComponent ()
 void CBaseMeshComponent::Tick ( float DeltaTime )
 	{
 	Super::Tick ( DeltaTime );
-
-	
-	DebugTimer += DeltaTime;
-	if (DebugTimer >= 100.f)
-		{
-		LOG_DEBUG ( "INFO FROM :", GetName () );
-		LOG_DEBUG ( "  Vertex count: ", m_VertexCount );
-		LOG_DEBUG ( "  Index count: ", m_IndexCount );
-		LOG_DEBUG ( "  Vertex buffer: ", ( void * ) m_VertexBuffer );
-		LOG_DEBUG ( "  Index buffer: ", ( void * ) m_IndexBuffer );
-		LOG_DEBUG ( "END INFO FROM: ", GetName () );
-		DebugTimer = 0.f;
-		}
+		
 	}
 
+void CBaseMeshComponent::OnEndPlay ()
+	{
+	Super::OnEndPlay ();
+	DestroyRenderResources ();
+	}
 void CBaseMeshComponent::OnBeginPlay ()
 	{
 	Super::OnBeginPlay ();
@@ -122,6 +115,8 @@ void CBaseMeshComponent::CreateRenderResources ()
 	if (vertexBuffer.IsValid ())
 		{
 		m_VertexBuffer = vertexBuffer.Buffer;
+		m_vertexmemory = vertexBuffer.Memory;
+		mapedVertexMemory = vertexBuffer.MappedData;
 		LOG_DEBUG ( "[", GetName (), "] Vertex buffer created: ", m_VertexCount, " vertices, handle: ", ( void * ) m_VertexBuffer );
 		}
 	else
@@ -142,6 +137,8 @@ void CBaseMeshComponent::CreateRenderResources ()
 		if (indexBuffer.IsValid ())
 			{
 			m_IndexBuffer = indexBuffer.Buffer;
+			m_indexmemory = indexBuffer.Memory;
+			mapedIndexMemory = indexBuffer.MappedData;
 			LOG_DEBUG ( "[", GetName (), "] Index buffer created: ", m_IndexCount, " indices, handle: ", ( void * ) m_IndexBuffer );
 			}
 		else
@@ -157,7 +154,7 @@ void CBaseMeshComponent::CreateRenderResources ()
 
 void CBaseMeshComponent::DestroyRenderResources ()
 	{
-		// Буферы удаляются BufferManager'ом, мы только обнуляем указатели
+	
 	m_VertexBuffer = VK_NULL_HANDLE;
 	m_IndexBuffer = VK_NULL_HANDLE;
 	m_VertexCount = 0;

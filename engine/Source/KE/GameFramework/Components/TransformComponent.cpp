@@ -39,7 +39,10 @@ void CTransformComponent::Tick ( float DeltaTime )
 		UpdateTransform ();
 		}
 	}
-
+void CTransformComponent::OnEndPlay ()
+	{
+	Super::OnEndPlay ();
+	}
 void CTransformComponent::OnBeginPlay ()
 	{
 	Super::OnBeginPlay ();

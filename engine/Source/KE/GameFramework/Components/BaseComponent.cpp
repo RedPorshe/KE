@@ -5,7 +5,7 @@
 
 
 CBaseComponent::CBaseComponent ( CObject * owner, const std::string & inName ) : CObject ( owner, inName )
-	{	
+	{
 	 // Ищем актора в цепочке владельцев
 	CObject * current = owner;
 	while (current && !ActorOwner)
@@ -17,13 +17,13 @@ CBaseComponent::CBaseComponent ( CObject * owner, const std::string & inName ) :
 
 CBaseComponent::~CBaseComponent ()
 	{
-	
+
 	}
 
 void CBaseComponent::InitComponent ()
 	{
 	if (bIsInitialized)
-		{		
+		{
 		return;
 		}
 	bIsInitialized = true;
@@ -38,8 +38,8 @@ void CBaseComponent::Tick ( float DeltaTime )
 		static int warnCount = 0;
 		if (warnCount++ < 3) // Лимитируем предупреждения
 			{
-			LOG_WARN ( "Component '" , GetName ()
-				, "' not initialized, skipping tick");
+			LOG_WARN ( "Component '", GetName ()
+					   , "' not initialized, skipping tick" );
 			}
 		return;
 		}
@@ -52,16 +52,16 @@ void CBaseComponent::Tick ( float DeltaTime )
 			comp->Tick ( DeltaTime );
 			}
 		}
-		
+
 	for (auto actor : AttachedActors)
 		{
 		if (actor && actor->IsCanTickOnAttached () && actor->IsAttached ())
 			{
 			actor->Tick ( DeltaTime );
 			}
-		}	
+		}
 
-	
+
 	}
 
 bool CBaseComponent::CanTick () const
@@ -69,8 +69,23 @@ bool CBaseComponent::CanTick () const
 	return bIsComponentTick && bIsInitialized;
 	}
 
+void CBaseComponent::OnEndPlay ()
+	{
+	if (!bIsStartedEndPlay)
+		{
+		bIsStartedEndPlay = true;
+		if (!OwnedComponents.empty ())
+			{
+			for (auto comp : OwnedComponents)
+				{
+				comp->OnEndPlay ();
+				}
+			}
+		}
+	}
 void CBaseComponent::OnBeginPlay ()
 	{
+	bIsStartedEndPlay = false;
 	if (bIsAutoInit)
 		{
 		InitComponent ();
@@ -129,13 +144,13 @@ void CBaseComponent::AttachComponentToComponent ( CBaseComponent * CompToAttach 
 	{
 	if (!CompToAttach)
 		{
-		LOG_ERROR ( "Component to attach is nullptr");
+		LOG_ERROR ( "Component to attach is nullptr" );
 		return;
 		}
 
 	if (CompToAttach == this)
 		{
-		LOG_ERROR ( "Cannot attach component to itself");
+		LOG_ERROR ( "Cannot attach component to itself" );
 		return;
 		}
 
@@ -143,14 +158,14 @@ void CBaseComponent::AttachComponentToComponent ( CBaseComponent * CompToAttach 
 	auto it = std::find ( OwnedComponents.begin (), OwnedComponents.end (), CompToAttach );
 	if (it != OwnedComponents.end ())
 		{
-		LOG_WARN ( "Component '" , CompToAttach->GetName (), "' already attached to this component");
+		LOG_WARN ( "Component '", CompToAttach->GetName (), "' already attached to this component" );
 		return;
 		}
 
 		// Проверяем, не создаст ли это циклическую ссылку
 	if (WouldCreateCircularReference ( CompToAttach ))
 		{
-		LOG_ERROR( "Would create circular reference");
+		LOG_ERROR ( "Would create circular reference" );
 		return;
 		}
 
@@ -158,12 +173,12 @@ void CBaseComponent::AttachComponentToComponent ( CBaseComponent * CompToAttach 
 	if (CompToAttach->GetOwner ()->TransferOwnership ( CompToAttach, this ))
 		{
 		OwnedComponents.push_back ( CompToAttach );
-		LOG_DEBUG(  "Success attach component '" , CompToAttach->GetName ()
-			, "' to component '", GetName () , "'");
+		LOG_DEBUG ( "Success attach component '", CompToAttach->GetName ()
+					, "' to component '", GetName (), "'" );
 		}
 	else
 		{
-		LOG_ERROR ("Failed to transfer ownership");
+		LOG_ERROR ( "Failed to transfer ownership" );
 		}
 	}
 
@@ -171,7 +186,7 @@ void CBaseComponent::AttachActorToComponent ( CActor * ActorToAttach )
 	{
 	if (!ActorToAttach)
 		{
-		LOG_ERROR( "Actor to attach is nullptr");
+		LOG_ERROR ( "Actor to attach is nullptr" );
 		return;
 		}
 
@@ -179,14 +194,14 @@ void CBaseComponent::AttachActorToComponent ( CActor * ActorToAttach )
 	auto it = std::find ( AttachedActors.begin (), AttachedActors.end (), ActorToAttach );
 	if (it != AttachedActors.end ())
 		{
-		LOG_WARN( "Actor '" , ActorToAttach->GetName ()
-			, "' already attached to this component");
+		LOG_WARN ( "Actor '", ActorToAttach->GetName ()
+				   , "' already attached to this component" );
 		return;
 		}
 
 		// ЛОГИЧЕСКОЕ прикрепление (не владение!)
 	AttachedActors.push_back ( ActorToAttach );
-	
+
 
 	// Если это SceneComponent, можно обновить трансформы
 	if (CTransformComponent * SceneComp = dynamic_cast< CTransformComponent * >( this ))
@@ -198,11 +213,11 @@ void CBaseComponent::AttachActorToComponent ( CActor * ActorToAttach )
 			}
 		}
 	ActorToAttach->SetIsAttached ( true );
-	LOG_DEBUG( "Success attach actor '" , ActorToAttach->GetName ()
-		, "' to component '", this->GetName () , "'");
+	LOG_DEBUG ( "Success attach actor '", ActorToAttach->GetName ()
+				, "' to component '", this->GetName (), "'" );
 	}
 
-bool CBaseComponent::WouldCreateCircularReference ( CBaseComponent * CompToAttach ) 
+bool CBaseComponent::WouldCreateCircularReference ( CBaseComponent * CompToAttach )
 	{
 		// Проверяем, не является ли CompToAttach нашим предком
 	CObject * current = this;
@@ -218,7 +233,6 @@ bool CBaseComponent::WouldCreateCircularReference ( CBaseComponent * CompToAttac
 	}
 
 void CBaseComponent::DetachFromParent ()
-	{
-	}
+	{}
 
 

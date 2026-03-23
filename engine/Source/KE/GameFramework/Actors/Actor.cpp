@@ -135,6 +135,10 @@ void CActor::Tick ( float deltaTime )
 void CActor::EndPlay ()
 	{
 	LOG_DEBUG ( "[ACTOR] EndPlay: ", GetName () );
+	for (auto comp : ActorComponents)
+		{
+		comp->OnEndPlay ();
+		}
 	}
 
 void CActor::DebugInfo ( float deltaTime )

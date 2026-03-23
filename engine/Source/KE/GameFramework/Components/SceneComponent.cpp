@@ -24,4 +24,8 @@ void CSceneComponent::OnBeginPlay ()
 	{
 	Super::OnBeginPlay ();
 	}
+void CSceneComponent::OnEndPlay ()
+	{
+	Super::OnEndPlay ();
+	}
 

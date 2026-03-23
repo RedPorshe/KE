@@ -3,16 +3,16 @@
 #include "KE/Vulkan/Managers/CommandManager.h"
 #include "KE/Vulkan/VKinfo.h"
 
-BufferManager::BufferManager () :IVKManager ()
-	{}
+BufferManager::BufferManager () : IVKManager ()
+    {}
 
 BufferManager::~BufferManager ()
-	{
-	Shutdown ();
-	}
+    {
+    Shutdown ();
+    }
 
 bool BufferManager::Init ()
-	{
+    {
     LogDebug ( "Initializing BufferManager..." );
 
     auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
@@ -21,7 +21,7 @@ bool BufferManager::Init ()
         LogError ( "DeviceManager not initialized" );
         return false;
         }
-
+    m_Device = deviceMgr->GetDevice ();
     auto * cmdMgr = static_cast< CommandManager * >( m_info->Managers.CommandManager.get () );
     if (!cmdMgr || !cmdMgr->IsInitialized ())
         {
@@ -32,56 +32,93 @@ bool BufferManager::Init ()
     LogDebug ( "BufferManager initialized successfully" );
     bIsInitialized = true;
     return true;
-
-	}
+    }
 
 void BufferManager::Shutdown ()
-	{}
+    {
+    LogDebug ( "Shutting down BufferManager..." );
+
+    // Получаем device ДО начала уничтожения буферов
+    VkDevice device = m_Device;
+
+    // Уничтожаем все зарегистрированные буферы
+    for (auto  buffer : m_Buffers)
+        {        
+            if (buffer.MappedData)
+                {
+                vkUnmapMemory ( device, buffer.Memory );
+                buffer.MappedData = nullptr;
+                }
+            if (buffer.Buffer != VK_NULL_HANDLE)
+                {
+                vkDestroyBuffer ( device, buffer.Buffer, nullptr );
+                buffer.Buffer = VK_NULL_HANDLE;
+                }
+            if (buffer.Memory != VK_NULL_HANDLE)
+                {
+                vkFreeMemory ( device, buffer.Memory, nullptr );
+                buffer.Memory = VK_NULL_HANDLE;
+                }
+            buffer.Invalidate ();
+            }
+        
+    m_Buffers.clear ();
+
+    m_Device = VK_NULL_HANDLE;
+    bIsInitialized = false;
+    LogDebug ( "BufferManager shutdown complete" );
+    }
 
 const std::string & BufferManager::GetManagerName () const
-	{
-	static const std::string name = "Buffer Manager";
-	return name;
-	}
+    {
+    static const std::string name = "Buffer Manager";
+    return name;
+    }
 
 FBuffer BufferManager::CreateBuffer ( VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties )
-	{
-	FBuffer buffer;
-	buffer.Size = Size;
-	buffer.Usage = Usage;
-	VkDevice device = VK_NULL_HANDLE;
-	if (DeviceManager * deviceManager = dynamic_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () ))
-		{
-		device = deviceManager->GetDevice ();
-		}
-	
-	buffer.Buffer = CreateBufferHandle ( Size, Usage );
-	if (buffer.Buffer == VK_NULL_HANDLE)
-		{
-		return buffer;
-		}
+    {
+    FBuffer buffer;
+    buffer.Size = Size;
+    buffer.Usage = Usage;
 
+    if (Size == 0)
+        {
+        LogError ( "Cannot create buffer with size 0" );
+        return buffer;
+        }
 
-	buffer.Memory = AllocateBufferMemory ( buffer.Buffer, Properties );
-	if (buffer.Memory == VK_NULL_HANDLE)
-		{		
-		vkDestroyBuffer ( device, buffer.Buffer, nullptr );
-		buffer.Buffer = VK_NULL_HANDLE;
-		return buffer;
-		}
+    VkDevice device = m_Device;
 
-	VkResult result = vkBindBufferMemory ( device, buffer.Buffer, buffer.Memory, 0 );
-	if (result != VK_SUCCESS)
-		{
-		LogError ( "Failed to bind buffer memory: ", static_cast< int >( result ) );
-		vkDestroyBuffer ( device, buffer.Buffer, nullptr );
-		vkFreeMemory ( device, buffer.Memory, nullptr );
-		buffer.Invalidate ();
-		}
+    buffer.Buffer = CreateBufferHandle ( Size, Usage );
+    if (buffer.Buffer == VK_NULL_HANDLE)
+        {
+        return buffer;
+        }
 
-	return buffer;
-	}
+    buffer.Memory = AllocateBufferMemory ( buffer.Buffer, Properties );
+    if (buffer.Memory == VK_NULL_HANDLE)
+        {
+        vkDestroyBuffer ( device, buffer.Buffer, nullptr );
+        buffer.Buffer = VK_NULL_HANDLE;
+        return buffer;
+        }
 
+    VkResult result = vkBindBufferMemory ( device, buffer.Buffer, buffer.Memory, 0 );
+    if (result != VK_SUCCESS)
+        {
+        LogError ( "Failed to bind buffer memory: ", static_cast< int >( result ) );
+        vkDestroyBuffer ( device, buffer.Buffer, nullptr );
+        vkFreeMemory ( device, buffer.Memory, nullptr );
+        buffer.Invalidate ();
+        return buffer;
+        }
+
+        // Храним КОПИЮ буфера, а не указатель на локальную переменную
+    m_Buffers.push_back ( buffer );
+
+    // Возвращаем копию, но исходная переменная buffer будет уничтожена
+    return buffer;
+    }
 
 FBuffer BufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Data )
     {
@@ -137,14 +174,12 @@ FBuffer BufferManager::CreateVertexBuffer ( VkDeviceSize Size, const void * Data
     return buffer;
     }
 
-
 FBuffer BufferManager::CreateIndexBuffer ( VkDeviceSize Size, const void * Data )
     {
     FBuffer buffer;
 
     if (Data)
         {
-        // Create staging buffer
         FBuffer stagingBuffer = CreateStagingBuffer ( Size, Data );
         if (!stagingBuffer.IsValid ())
             {
@@ -152,30 +187,25 @@ FBuffer BufferManager::CreateIndexBuffer ( VkDeviceSize Size, const void * Data 
             return buffer;
             }
 
-        // Create device local buffer
         buffer = CreateBuffer ( Size,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
         if (buffer.IsValid ())
             {
-            // Copy from staging to device local buffer
             CopyBufferToBuffer ( stagingBuffer, buffer, Size );
             }
 
-        // Cleanup staging buffer
         DestroyBuffer ( stagingBuffer );
         }
     else
         {
-        // Create host visible buffer for dynamic data
         buffer = CreateBuffer ( Size,
                                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
         }
 
     return buffer;
-
     }
 
 FBuffer BufferManager::CreateUniformBuffer ( VkDeviceSize Size )
@@ -183,14 +213,12 @@ FBuffer BufferManager::CreateUniformBuffer ( VkDeviceSize Size )
     return CreateBuffer ( Size,
                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
-
     }
 
 FBuffer BufferManager::CreateStagingBuffer ( VkDeviceSize Size, const void * Data )
     {
-        // Staging buffer должен иметь флаг TRANSFER_SRC_BIT, а не TRANSFER_DST_BIT
     FBuffer buffer = CreateBuffer ( Size,
-                                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,  // ← Исправлено!
+                                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
 
     if (buffer.IsValid () && Data)
@@ -260,10 +288,7 @@ void * BufferManager::MapBuffer ( FBuffer & Buffer )
         return Buffer.MappedData;
         }
 
-    auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
-    VkDevice device = deviceMgr->GetDevice ();
-
-    VkResult result = vkMapMemory ( device, Buffer.Memory, 0, Buffer.Size, 0, &Buffer.MappedData );
+    VkResult result = vkMapMemory ( m_Device, Buffer.Memory, 0, Buffer.Size, 0, &Buffer.MappedData );
     if (result != VK_SUCCESS)
         {
         LogError ( "Failed to map buffer memory: ", static_cast< int >( result ) );
@@ -271,7 +296,6 @@ void * BufferManager::MapBuffer ( FBuffer & Buffer )
         }
 
     return Buffer.MappedData;
-
     }
 
 void BufferManager::UnmapBuffer ( FBuffer & Buffer )
@@ -281,10 +305,7 @@ void BufferManager::UnmapBuffer ( FBuffer & Buffer )
         return;
         }
 
-    auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
-    VkDevice device = deviceMgr->GetDevice ();
-
-    vkUnmapMemory ( device, Buffer.Memory );
+    vkUnmapMemory ( m_Device, Buffer.Memory );
     Buffer.MappedData = nullptr;
     }
 
@@ -293,12 +314,45 @@ void BufferManager::UpdateUniformBuffer ( FBuffer & Buffer, const void * Data, V
     CopyDataToBuffer ( Buffer, Data, Size );
     }
 
+void BufferManager::DestroyBuffer ( VkBuffer & buffer )
+    {
+    if (buffer != VK_NULL_HANDLE)
+        {
+        vkDestroyBuffer ( m_Device, buffer, nullptr );
+        buffer = VK_NULL_HANDLE;
+        }
+    }
+
+void BufferManager::FreeMemory ( VkDeviceMemory & memory )
+    {
+    if (memory != VK_NULL_HANDLE)
+        {
+        vkFreeMemory ( m_Device, memory, nullptr );
+        memory = VK_NULL_HANDLE;
+        }
+    }
+
+void BufferManager::UnMapMemory ( void * data )
+    {
+    if (data != nullptr)
+        {
+        vkUnmapMemory ( m_Device, static_cast< VkDeviceMemory >( data ) );
+        }
+    }
+
 void BufferManager::DestroyBuffer ( FBuffer & Buffer )
     {
     if (!Buffer.IsValid ()) return;
 
-    auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
-    VkDevice device = deviceMgr->GetDevice ();
+    VkDevice device = m_Device;
+
+    // Удаляем из списка - теперь ищем по Buffer.Buffer
+    auto it = std::find_if ( m_Buffers.begin (), m_Buffers.end (),
+                             [ &Buffer ] ( const FBuffer & b ) { return b.Buffer == Buffer.Buffer; } );
+    if (it != m_Buffers.end ())
+        {
+        m_Buffers.erase ( it );
+        }
 
     if (Buffer.MappedData)
         {
@@ -309,22 +363,20 @@ void BufferManager::DestroyBuffer ( FBuffer & Buffer )
     if (Buffer.Buffer != VK_NULL_HANDLE)
         {
         vkDestroyBuffer ( device, Buffer.Buffer, nullptr );
+        Buffer.Buffer = VK_NULL_HANDLE;
         }
 
     if (Buffer.Memory != VK_NULL_HANDLE)
         {
         vkFreeMemory ( device, Buffer.Memory, nullptr );
+        Buffer.Memory = VK_NULL_HANDLE;
         }
 
     Buffer.Invalidate ();
-
     }
 
 VkBuffer BufferManager::CreateBufferHandle ( VkDeviceSize Size, VkBufferUsageFlags Usage )
     {
-    auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
-    VkDevice device = deviceMgr->GetDevice ();
-
     VkBufferCreateInfo bufferInfo {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = Size;
@@ -332,7 +384,7 @@ VkBuffer BufferManager::CreateBufferHandle ( VkDeviceSize Size, VkBufferUsageFla
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkBuffer buffer;
-    VkResult result = vkCreateBuffer ( device, &bufferInfo, nullptr, &buffer );
+    VkResult result = vkCreateBuffer ( m_Device, &bufferInfo, nullptr, &buffer );
     if (result != VK_SUCCESS)
         {
         LogError ( "Failed to create buffer: ", static_cast< int >( result ) );
@@ -340,16 +392,12 @@ VkBuffer BufferManager::CreateBufferHandle ( VkDeviceSize Size, VkBufferUsageFla
         }
 
     return buffer;
-
     }
 
 VkDeviceMemory BufferManager::AllocateBufferMemory ( VkBuffer Buffer, VkMemoryPropertyFlags Properties )
     {
-    auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
-    VkDevice device = deviceMgr->GetDevice ();
-
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements ( device, Buffer, &memRequirements );
+    vkGetBufferMemoryRequirements ( m_Device, Buffer, &memRequirements );
 
     VkMemoryAllocateInfo allocInfo {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -363,7 +411,7 @@ VkDeviceMemory BufferManager::AllocateBufferMemory ( VkBuffer Buffer, VkMemoryPr
         }
 
     VkDeviceMemory memory;
-    VkResult result = vkAllocateMemory ( device, &allocInfo, nullptr, &memory );
+    VkResult result = vkAllocateMemory ( m_Device, &allocInfo, nullptr, &memory );
     if (result != VK_SUCCESS)
         {
         LogError ( "Failed to allocate buffer memory: ", static_cast< int >( result ) );
@@ -371,25 +419,20 @@ VkDeviceMemory BufferManager::AllocateBufferMemory ( VkBuffer Buffer, VkMemoryPr
         }
 
     return memory;
-
     }
 
 uint32_t BufferManager::FindMemoryType ( uint32_t TypeFilter, VkMemoryPropertyFlags Properties ) const
     {
     auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
     return deviceMgr->FindMemoryType ( TypeFilter, Properties );
-
     }
 
 void BufferManager::CopyDataToDeviceMemory ( VkDeviceMemory Memory, const void * Data, VkDeviceSize Size )
     {
-    auto * deviceMgr = static_cast< DeviceManager * >( m_info->Managers.DeviceManager.get () );
-    VkDevice device = deviceMgr->GetDevice ();
-
     void * mappedData;
-    vkMapMemory ( device, Memory, 0, Size, 0, &mappedData );
+    vkMapMemory ( m_Device, Memory, 0, Size, 0, &mappedData );
     memcpy ( mappedData, Data, static_cast< size_t >( Size ) );
-    vkUnmapMemory ( device, Memory );
+    vkUnmapMemory ( m_Device, Memory );
     }
 
 void BufferManager::ExecuteSingleTimeCommand ( std::function<void ( VkCommandBuffer )> && Function )

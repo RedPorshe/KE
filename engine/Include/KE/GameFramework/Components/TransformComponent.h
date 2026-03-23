@@ -18,7 +18,7 @@ class KE_API CTransformComponent : public CBaseComponent
         virtual void InitComponent () override;
         virtual void Tick ( float DeltaTime ) override;
         virtual void OnBeginPlay () override;
-
+        void OnEndPlay ()override;
         void UpdateTransform ();
         void MarkTransformDirty ();
         bool IdDirty () const { return bIsTransformDirty; }

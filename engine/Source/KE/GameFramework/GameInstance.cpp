@@ -61,6 +61,7 @@ void CGameInstance::Destroy ()
 	{
 	if (Instance)
 		{
+		
 		delete Instance;
 		Instance = nullptr;
 		LOG_DEBUG ( "[GAME] GameInstance destroyed" );
@@ -134,7 +135,7 @@ void CGameInstance::Tick ( float deltaTime )
 	{
 	DeltaTime = deltaTime;
 	GameTime += deltaTime;
-
+	
 	// Tick world если существует
 	if (CurrentWorld)
 		{
@@ -159,6 +160,7 @@ void CGameInstance::Shutdown ()
 
 	if (CurrentWorld)
 		{
+		CurrentWorld->EndPlay ();
 		DestroyWorld ();
 		}
 	}

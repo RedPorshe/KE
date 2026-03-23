@@ -10,6 +10,7 @@
 #include "KE/Vulkan/Managers/DeviceManager.h"
 #include "KE/Vulkan/Managers/SyncManager.h"
 #include "KE/Vulkan/VKinfo.h"
+#include "KE/Vulkan/RenderInfo.h"
 
 RenderSystem::RenderSystem ()
     : m_vulkanContext ( MakeUnique<VulkanContext> () )
@@ -162,6 +163,7 @@ void RenderSystem::Shutdown ()
         {
         bufferMgr->DestroyBuffer ( m_triangleVertexBuffer );
         LogDebug ( "Triangle vertex buffer destroyed" );
+        BuffMgr->Shutdown ();
         }
 
     m_vulkanContext->Shutdown ();
@@ -395,12 +397,16 @@ bool RenderSystem::RenderTriangle ()
             // - Террейнов из m_RenderInfo.Terrains
             // - Debug коллизий из m_RenderInfo.DebugCollisions
             // - Wireframe террейнов из m_RenderInfo.TerrainWireframes
-
-        LogTrace ( "Rendering scene with "
-                  // m_RenderInfo.GetMeshCount (), " meshes, ",
-                 //  m_RenderInfo.GetTerrainCount (), " terrains, ",
-                 //  m_RenderInfo.GetDebugCollisionCount (), " debug collisions, ",
-                 /*  m_RenderInfo.GetTerrainWireframeCount (), " terrain wireframes"*/);
+        static int tracecount = 0;
+        if(tracecount <1)
+            {
+            LogTrace ( "Rendering scene with ",
+                       m_RenderInfo.GetMeshCount (), " meshes, ",
+                       m_RenderInfo.GetTerrainCount (), " terrains, ",
+                       m_RenderInfo.GetDebugCollisionCount (), " debug collisions, ",
+                       m_RenderInfo.GetTerrainWireframeCount (), " terrain wireframes" );
+            tracecount++;
+            }
 
         // Пока возвращаем успех, но ничего не рендерим
         // Полная реализация будет добавлена позже

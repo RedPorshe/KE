@@ -60,8 +60,11 @@ class KE_API CEngine
             m_systems.push_back ( system );
             return system;
             }
-
+        class CGameInstance * GetGameInstance () const { return gameinstance; }
+        void SetGameInstance (  class CGameInstance * instance ) { gameinstance = instance; }
     private:
+
+        class CGameInstance * gameinstance = nullptr;
         static CEngine * Instance;
         void ParseCmdLine ( int argc, char * argv [] );
         bool InitAllSystems ();

@@ -1,5 +1,7 @@
 #include <KE/Engine.h>
+#include <KE/GameFramework/GameInstance.h>
 #include <CoreMinimal.h>
+#include "test.h"
 
 int main ( int argc, char * argv [] )
 	{
@@ -17,6 +19,9 @@ int main ( int argc, char * argv [] )
 		ErrorLevel = 0;
 		if (ErrorLevel == Engine.Init ())
 			{
+			CreateTestWorld ();
+			auto GI = CEngine::Get ().GetGameInstance ();
+			if(GI)GI->Init ();
 			Engine.Run ();
 			}
 		}

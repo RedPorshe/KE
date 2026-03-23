@@ -23,7 +23,7 @@ class KE_API CBaseMeshComponent : public CSceneComponent
         virtual void InitComponent () override;
         virtual void Tick ( float DeltaTime ) override;
         virtual void OnBeginPlay () override;
-
+        void OnEndPlay () override;
         // ========== Интерфейс для рендера ==========
         /**
          * Получить информацию о меше для рендера
@@ -102,6 +102,10 @@ class KE_API CBaseMeshComponent : public CSceneComponent
         // ========== Vulkan ресурсы ==========
         VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
         VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
+        VkDeviceMemory m_vertexmemory = VK_NULL_HANDLE;
+        VkDeviceMemory m_indexmemory = VK_NULL_HANDLE;
+        void * mapedIndexMemory = nullptr;
+        void * mapedVertexMemory = nullptr;
         uint32_t m_VertexCount = 0;
         uint32_t m_IndexCount = 0;
 

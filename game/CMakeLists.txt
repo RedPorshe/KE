@@ -1,8 +1,13 @@
 add_executable(game) 
 
+target_include_directories(game
+ PUBLIC
+${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 target_sources(game PRIVATE 
     src/gamemain.cpp
-  )
+   "include/test.h" "src/test.cpp")
 
 target_include_directories(game PRIVATE
     ${CMAKE_SOURCE_DIR}/engine/include

@@ -5,6 +5,8 @@
 #include "KE/Systems/InputSystem.h"
 #include "KE/Systems/CollisionSystem.h"
 #include "KE/Systems/GLFWDispatcher.h"
+#include <KE/GameFramework/GameInstance.h>
+#include <KE/GameFramework/World/World.h>
 
 #include <GLFW/glfw3.h>
 #include <chrono>
@@ -218,19 +220,35 @@ void CEngine::Shutdown ()
 void CEngine::Run ()
 	{
 	bIsRunning = true;
+	FRenderInfo * RenderInfo = new FRenderInfo ();
+	auto rendersystem = GetRenderer ();
 	auto lastTime = std::chrono::high_resolution_clock::now ();
-
+	if (gameinstance)
+		{
+		gameinstance->Init ();
+		}
 	while (bIsRunning)
 		{
+		RenderInfo->Clear ();
 		auto currentTime = std::chrono::high_resolution_clock::now ();
 		float deltaTime = std::chrono::duration<float> ( currentTime - lastTime ).count ();
 		lastTime = currentTime;
 		if (deltaTime < 0.0001f) deltaTime = 0.016f;
-
+		if (gameinstance)
+			{
+			gameinstance->Tick ( deltaTime );
+			gameinstance->GetWorld ()->CollectRenderInfo(RenderInfo);
+			}
+		
+		rendersystem->SetRenderInfo (*RenderInfo);
 		for (auto system : m_systems)
 			{
 			system->Update ( deltaTime );
 			}
+		}
+	if (gameinstance)
+		{
+		gameinstance->Shutdown ();
 		}
 	}
 bool CEngine::PreInitAllSystems ()

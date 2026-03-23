@@ -136,9 +136,12 @@ void CPawn::BeginPlay ()
 	{
 	Super::BeginPlay ();
 	LOG_DEBUG ( "[PAWN] BeginPlay: ", GetName () );
+	if(MovementComponent)
+	{
 	bUseControllerRotaionPitch = MovementComponent->GetUseContollRotaionPitch ();
 	bUseControllerRotaionRoll = MovementComponent->GetUseContollRotaionRoll ();
 	bUseControllerRotaionYaw = MovementComponent->GetUseContollRotaionYaw ();
+	}
 
 	}
 

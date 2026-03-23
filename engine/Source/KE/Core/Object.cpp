@@ -5,7 +5,7 @@
 #include <cctype>
 #include <algorithm>
 #include <fstream>
-//#include <rapidjson/error/en.h>
+#include <rapidjson/error/en.h>
 
 
 
@@ -419,277 +419,276 @@ bool CObject::Rename ( const std::string & newDisplayName )
 
 	// ========== JSON Serialization Implementation ==========
 
-//void CObject::Serialize ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const
-//	{
-//		// Basic object properties
-//	jsonValue.AddMember ( "ClassName", rapidjson::StringRef ( GetObjectClassName () ), allocator );
-//	jsonValue.AddMember ( "DisplayName", rapidjson::StringRef ( DisplayName.c_str () ), allocator );
-//	jsonValue.AddMember ( "UUID", rapidjson::StringRef ( ObjectUUID.c_str () ), allocator );
-//
-//	// Serialize custom properties from derived classes
-//	SerializeProperties ( jsonValue, allocator );
-//
-//	// Serialize children recursively
-//	if (!OwnedObjects.empty ())
-//		{
-//		rapidjson::Value childrenArray ( rapidjson::kArrayType );
-//		for (const auto & child : OwnedObjects)
-//			{
-//			rapidjson::Value childValue ( rapidjson::kObjectType );
-//			child->Serialize ( childValue, allocator );
-//			childrenArray.PushBack ( childValue, allocator );
-//			}
-//		jsonValue.AddMember ( "Children", childrenArray, allocator );
-//		}
-//	}
-//
-//void CObject::Deserialize ( const rapidjson::Value & jsonValue )
-//	{
-//		// Load basic properties
-//	if (jsonValue.HasMember ( "DisplayName" ) && jsonValue[ "DisplayName" ].IsString ())
-//		{
-//		DisplayName = jsonValue[ "DisplayName" ].GetString ();
-//		}
-//
-//	if (jsonValue.HasMember ( "UUID" ) && jsonValue[ "UUID" ].IsString ())
-//		{
-//		ObjectUUID = jsonValue[ "UUID" ].GetString ();
-//		}
-//
-//		// Deserialize custom properties
-//	DeserializeProperties ( jsonValue );
-//
-//	// Deserialize children
-//	if (jsonValue.HasMember ( "Children" ) && jsonValue[ "Children" ].IsArray ())
-//		{
-//		const rapidjson::Value & childrenArray = jsonValue[ "Children" ];
-//		for (rapidjson::SizeType i = 0; i < childrenArray.Size (); i++)
-//			{
-//			const rapidjson::Value & childValue = childrenArray[ i ];
-//			if (childValue.HasMember ( "ClassName" ) && childValue[ "ClassName" ].IsString ())
-//				{
-//				std::string className = childValue[ "ClassName" ].GetString ();
-//				std::string displayName = "LoadedObject";
-//
-//				if (childValue.HasMember ( "DisplayName" ) && childValue[ "DisplayName" ].IsString ())
-//					{
-//					displayName = childValue[ "DisplayName" ].GetString ();
-//					}
-//
-//					// Create object through factory
-//				CObject * childObj = AddSubObjectByClass ( className, displayName );
-//				if (childObj)
-//					{
-//					childObj->Deserialize ( childValue );
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//void CObject::SerializeProperties ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const
-//	{
-//		// Base class has no custom properties
-//		// Override in derived classes
-//	}
-//
-//void CObject::DeserializeProperties ( const rapidjson::Value & jsonValue )
-//	{
-//		// Base class has no custom properties
-//		// Override in derived classes
-//	}
+void CObject::Serialize ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const
+	{
+		// Basic object properties
+	jsonValue.AddMember ( "ClassName", rapidjson::StringRef ( GetObjectClassName () ), allocator );
+	jsonValue.AddMember ( "DisplayName", rapidjson::StringRef ( DisplayName.c_str () ), allocator );
+	jsonValue.AddMember ( "UUID", rapidjson::StringRef ( ObjectUUID.c_str () ), allocator );
+	// Serialize custom properties from derived classes
+	SerializeProperties ( jsonValue, allocator );
 
-//std::string CObject::ToJSON ( bool pretty ) const
-//	{
-//	rapidjson::Document doc;
-//	doc.SetObject ();
-//	rapidjson::Document::AllocatorType & allocator = doc.GetAllocator ();
-//
-//	// Serialize to root object
-//	Serialize ( doc, allocator );
-//
-//	// Convert to string
-//	rapidjson::StringBuffer buffer;
-//	if (pretty)
-//		{
-//		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer ( buffer );
-//		doc.Accept ( writer );
-//		}
-//	else
-//		{
-//		rapidjson::Writer<rapidjson::StringBuffer> writer ( buffer );
-//		doc.Accept ( writer );
-//		}
-//
-//	return buffer.GetString ();
-//	}
+	// Serialize children recursively
+	if (!OwnedObjects.empty ())
+		{
+		rapidjson::Value childrenArray ( rapidjson::kArrayType );
+		for (const auto & child : OwnedObjects)
+			{
+			rapidjson::Value childValue ( rapidjson::kObjectType );
+			child->Serialize ( childValue, allocator );
+			childrenArray.PushBack ( childValue, allocator );
+			}
+		jsonValue.AddMember ( "Children", childrenArray, allocator );
+		}
+	}
 
-//bool CObject::FromJSON ( const std::string & jsonString )
-//	{
-//	rapidjson::Document doc;
-//	doc.Parse ( jsonString.c_str () );
-//
-//	if (doc.HasParseError ())
-//		{
-//		LOG_ERROR( "JSON parse error: " , rapidjson::GetParseError_En ( doc.GetParseError () )
-//			, " at offset " , doc.GetErrorOffset () );
-//		return false;
-//		}
-//
-//	Deserialize ( doc );
-//	return true;
-//	}
-//
-//bool CObject::SaveToFile ( const std::string & filename, bool pretty ) const
-//	{
-//	std::ofstream file ( filename );
-//	if (!file.is_open ())
-//		{
-//		LOG_ERROR( "Failed to open file for writing: " , filename );
-//		return false;
-//		}
-//
-//	std::string json = ToJSON ( pretty );
-//	file << json;
-//	file.close ();
-//
-//	LOG_DEBUG( "Saved object '" , DisplayName , "' to file: " , filename);
-//	return true;
-//	}
-//
-//bool CObject::LoadFromFile ( const std::string & filename )
-//	{
-//	std::ifstream file ( filename );
-//	if (!file.is_open ())
-//		{
-//		LOG_ERROR( "Failed to open file for reading: " , filename);
-//		return false;
-//		}
-//
-//		// Read entire file
-//	std::stringstream buffer;
-//	buffer << file.rdbuf ();
-//	file.close ();
-//
-//	return FromJSON ( buffer.str () );
-//	}
-//
-//std::unique_ptr<CObject> CObject::CreateFromJSON ( const std::string & jsonString )
-//	{
-//	rapidjson::Document doc;
-//	doc.Parse ( jsonString.c_str () );
-//
-//	if (doc.HasParseError ())
-//		{
-//		LOG_ERROR( "JSON parse error: " , rapidjson::GetParseError_En ( doc.GetParseError () )
-//			, " at offset " , doc.GetErrorOffset () );
-//		return nullptr;
-//		}
-//
-//	if (!doc.HasMember ( "ClassName" ) || !doc[ "ClassName" ].IsString ())
-//		{
-//		LOG_ERROR( "JSON missing ClassName field") ;
-//		return nullptr;
-//		}
-//
-//	std::string className = doc[ "ClassName" ].GetString ();
-//	std::string displayName = "LoadedObject";
-//
-//	if (doc.HasMember ( "DisplayName" ) && doc[ "DisplayName" ].IsString ())
-//		{
-//		displayName = doc[ "DisplayName" ].GetString ();
-//		}
-//
-//		// Create through factory
-//	CObject * obj = OBJECT_FACTORY.Create ( className, nullptr, displayName );
-//	if (!obj)
-//		{
-//		LOG_ERROR( "Failed to create object of type: " , className) ;
-//		return nullptr;
-//		}
-//
-//		// Deserialize properties
-//	obj->Deserialize ( doc );
-//
-//	return std::unique_ptr<CObject> ( obj );
-//	}
+void CObject::Deserialize ( const rapidjson::Value & jsonValue )
+	{
+		// Load basic properties
+	if (jsonValue.HasMember ( "DisplayName" ) && jsonValue[ "DisplayName" ].IsString ())
+		{
+		DisplayName = jsonValue[ "DisplayName" ].GetString ();
+		}
 
-//std::unique_ptr<CObject> CObject::LoadFromJSONFile ( const std::string & filename )
-//	{
-//	std::ifstream file ( filename );
-//	if (!file.is_open ())
-//		{
-//		LOG_ERROR( "Failed to open file: " , filename) ;
-//		return nullptr;
-//		}
-//
-//	std::stringstream buffer;
-//	buffer << file.rdbuf ();
-//	file.close ();
-//
-//	return CreateFromJSON ( buffer.str () );
-//	}
+	if (jsonValue.HasMember ( "UUID" ) && jsonValue[ "UUID" ].IsString ())
+		{
+		ObjectUUID = jsonValue[ "UUID" ].GetString ();
+		}
 
-//std::string CObject::GetJSONSchema () const
-//	{
-//	rapidjson::Document doc;
-//	doc.SetObject ();
-//	rapidjson::Document::AllocatorType & allocator = doc.GetAllocator ();
-//
-//	rapidjson::Value schema ( rapidjson::kObjectType );
-//	schema.AddMember ( "type", "object", allocator );
-//
-//	rapidjson::Value properties ( rapidjson::kObjectType );
-//
-//	// Required properties
-//	rapidjson::Value required ( rapidjson::kArrayType );
-//	required.PushBack ( "ClassName", allocator );
-//	required.PushBack ( "DisplayName", allocator );
-//	required.PushBack ( "UUID", allocator );
-//
-//	// ClassName property
-//	rapidjson::Value classNameProp ( rapidjson::kObjectType );
-//	classNameProp.AddMember ( "type", "string", allocator );
-//	classNameProp.AddMember ( "description", "Object class name", allocator );
-//	properties.AddMember ( "ClassName", classNameProp, allocator );
-//
-//	// DisplayName property
-//	rapidjson::Value displayNameProp ( rapidjson::kObjectType );
-//	displayNameProp.AddMember ( "type", "string", allocator );
-//	displayNameProp.AddMember ( "description", "User-friendly display name", allocator );
-//	properties.AddMember ( "DisplayName", displayNameProp, allocator );
-//
-//	// UUID property
-//	rapidjson::Value uuidProp ( rapidjson::kObjectType );
-//	uuidProp.AddMember ( "type", "string", allocator );
-//	uuidProp.AddMember ( "description", "Unique identifier", allocator );
-//	uuidProp.AddMember ( "pattern", "^[0-9a-f]{32}$", allocator );
-//	properties.AddMember ( "UUID", uuidProp, allocator );
-//
-//	// Children property
-//	rapidjson::Value childrenProp ( rapidjson::kObjectType );
-//	childrenProp.AddMember ( "type", "array", allocator );
-//	childrenProp.AddMember ( "description", "Child objects", allocator );
-//
-//	rapidjson::Value items ( rapidjson::kObjectType );
-//	items.AddMember ( "$ref", "#", allocator ); // Self-reference
-//	childrenProp.AddMember ( "items", items, allocator );
-//
-//	properties.AddMember ( "Children", childrenProp, allocator );
-//
-//	schema.AddMember ( "properties", properties, allocator );
-//	schema.AddMember ( "required", required, allocator );
-//	schema.AddMember ( "additionalProperties", true, allocator );
-//
-//	doc.AddMember ( "$schema", "http://json-schema.org/draft-07/schema#", allocator );
-//	doc.AddMember ( "$id", rapidjson::StringRef ( GetObjectClassName () ), allocator );
-//	doc.AddMember ( "title", rapidjson::StringRef ( GetObjectClassName () ), allocator );
-//	doc.AddMember ( "description", "JSON schema for CObject hierarchy", allocator );
-//	doc.AddMember ( "definitions", schema, allocator );
-//
-//	rapidjson::StringBuffer buffer;
-//	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer ( buffer );
-//	doc.Accept ( writer );
-//
-//	return buffer.GetString ();
-//	}
+		// Deserialize custom properties
+	DeserializeProperties ( jsonValue );
+
+	// Deserialize children
+	if (jsonValue.HasMember ( "Children" ) && jsonValue[ "Children" ].IsArray ())
+		{
+		const rapidjson::Value & childrenArray = jsonValue[ "Children" ];
+		for (rapidjson::SizeType i = 0; i < childrenArray.Size (); i++)
+			{
+			const rapidjson::Value & childValue = childrenArray[ i ];
+			if (childValue.HasMember ( "ClassName" ) && childValue[ "ClassName" ].IsString ())
+				{
+				std::string className = childValue[ "ClassName" ].GetString ();
+				std::string displayName = "LoadedObject";
+
+				if (childValue.HasMember ( "DisplayName" ) && childValue[ "DisplayName" ].IsString ())
+					{
+					displayName = childValue[ "DisplayName" ].GetString ();
+					}
+
+					// Create object through factory
+				CObject * childObj = AddSubObjectByClass ( className, displayName );
+				if (childObj)
+					{
+					childObj->Deserialize ( childValue );
+					}
+				}
+			}
+		}
+	}
+
+void CObject::SerializeProperties ( rapidjson::Value & jsonValue, rapidjson::Document::AllocatorType & allocator ) const
+	{
+		// Base class has no custom properties
+		// Override in derived classes
+	}
+
+void CObject::DeserializeProperties ( const rapidjson::Value & jsonValue )
+	{
+		// Base class has no custom properties
+		// Override in derived classes
+	}
+
+std::string CObject::ToJSON ( bool pretty ) const
+	{
+	rapidjson::Document doc;
+	doc.SetObject ();
+	rapidjson::Document::AllocatorType & allocator = doc.GetAllocator ();
+
+	// Serialize to root object
+	Serialize ( doc, allocator );
+
+	// Convert to string
+	rapidjson::StringBuffer buffer;
+	if (pretty)
+		{
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer ( buffer );
+		doc.Accept ( writer );
+		}
+	else
+		{
+		rapidjson::Writer<rapidjson::StringBuffer> writer ( buffer );
+		doc.Accept ( writer );
+		}
+
+	return buffer.GetString ();
+	}
+
+bool CObject::FromJSON ( const std::string & jsonString )
+	{
+	rapidjson::Document doc;
+	doc.Parse ( jsonString.c_str () );
+
+	if (doc.HasParseError ())
+		{
+		LOG_ERROR( "JSON parse error: " , rapidjson::GetParseError_En ( doc.GetParseError () )
+			, " at offset " , doc.GetErrorOffset () );
+		return false;
+		}
+
+	Deserialize ( doc );
+	return true;
+	}
+
+bool CObject::SaveToFile ( const std::string & filename, bool pretty ) const
+	{
+	std::ofstream file ( filename );
+	if (!file.is_open ())
+		{
+		LOG_ERROR( "Failed to open file for writing: " , filename );
+		return false;
+		}
+
+	std::string json = ToJSON ( pretty );
+	file << json;
+	file.close ();
+
+	LOG_DEBUG( "Saved object '" , DisplayName , "' to file: " , filename);
+	return true;
+	}
+
+bool CObject::LoadFromFile ( const std::string & filename )
+	{
+	std::ifstream file ( filename );
+	if (!file.is_open ())
+		{
+		LOG_ERROR( "Failed to open file for reading: " , filename);
+		return false;
+		}
+
+		// Read entire file
+	std::stringstream buffer;
+	buffer << file.rdbuf ();
+	file.close ();
+
+	return FromJSON ( buffer.str () );
+	}
+
+std::unique_ptr<CObject> CObject::CreateFromJSON ( const std::string & jsonString )
+	{
+	rapidjson::Document doc;
+	doc.Parse ( jsonString.c_str () );
+
+	if (doc.HasParseError ())
+		{
+		LOG_ERROR( "JSON parse error: " , rapidjson::GetParseError_En ( doc.GetParseError () )
+			, " at offset " , doc.GetErrorOffset () );
+		return nullptr;
+		}
+
+	if (!doc.HasMember ( "ClassName" ) || !doc[ "ClassName" ].IsString ())
+		{
+		LOG_ERROR( "JSON missing ClassName field") ;
+		return nullptr;
+		}
+
+	std::string className = doc[ "ClassName" ].GetString ();
+	std::string displayName = "LoadedObject";
+
+	if (doc.HasMember ( "DisplayName" ) && doc[ "DisplayName" ].IsString ())
+		{
+		displayName = doc[ "DisplayName" ].GetString ();
+		}
+
+		// Create through factory
+	CObject * obj = OBJECT_FACTORY.Create ( className, nullptr, displayName );
+	if (!obj)
+		{
+		LOG_ERROR( "Failed to create object of type: " , className) ;
+		return nullptr;
+		}
+
+		// Deserialize properties
+	obj->Deserialize ( doc );
+
+	return std::unique_ptr<CObject> ( obj );
+	}
+
+std::unique_ptr<CObject> CObject::LoadFromJSONFile ( const std::string & filename )
+	{
+	std::ifstream file ( filename );
+	if (!file.is_open ())
+		{
+		LOG_ERROR( "Failed to open file: " , filename) ;
+		return nullptr;
+		}
+
+	std::stringstream buffer;
+	buffer << file.rdbuf ();
+	file.close ();
+
+	return CreateFromJSON ( buffer.str () );
+	}
+
+std::string CObject::GetJSONSchema () const
+	{
+	rapidjson::Document doc;
+	doc.SetObject ();
+	rapidjson::Document::AllocatorType & allocator = doc.GetAllocator ();
+
+	rapidjson::Value schema ( rapidjson::kObjectType );
+	schema.AddMember ( "type", "object", allocator );
+
+	rapidjson::Value properties ( rapidjson::kObjectType );
+
+	// Required properties
+	rapidjson::Value required ( rapidjson::kArrayType );
+	required.PushBack ( "ClassName", allocator );
+	required.PushBack ( "DisplayName", allocator );
+	required.PushBack ( "UUID", allocator );
+
+	// ClassName property
+	rapidjson::Value classNameProp ( rapidjson::kObjectType );
+	classNameProp.AddMember ( "type", "string", allocator );
+	classNameProp.AddMember ( "description", "Object class name", allocator );
+	properties.AddMember ( "ClassName", classNameProp, allocator );
+
+	// DisplayName property
+	rapidjson::Value displayNameProp ( rapidjson::kObjectType );
+	displayNameProp.AddMember ( "type", "string", allocator );
+	displayNameProp.AddMember ( "description", "User-friendly display name", allocator );
+	properties.AddMember ( "DisplayName", displayNameProp, allocator );
+
+	// UUID property
+	rapidjson::Value uuidProp ( rapidjson::kObjectType );
+	uuidProp.AddMember ( "type", "string", allocator );
+	uuidProp.AddMember ( "description", "Unique identifier", allocator );
+	uuidProp.AddMember ( "pattern", "^[0-9a-f]{32}$", allocator );
+	properties.AddMember ( "UUID", uuidProp, allocator );
+
+	// Children property
+	rapidjson::Value childrenProp ( rapidjson::kObjectType );
+	childrenProp.AddMember ( "type", "array", allocator );
+	childrenProp.AddMember ( "description", "Child objects", allocator );
+
+	rapidjson::Value items ( rapidjson::kObjectType );
+	items.AddMember ( "$ref", "#", allocator ); // Self-reference
+	childrenProp.AddMember ( "items", items, allocator );
+
+	properties.AddMember ( "Children", childrenProp, allocator );
+
+	schema.AddMember ( "properties", properties, allocator );
+	schema.AddMember ( "required", required, allocator );
+	schema.AddMember ( "additionalProperties", true, allocator );
+
+	doc.AddMember ( "$schema", "http://json-schema.org/draft-07/schema#", allocator );
+	doc.AddMember ( "$id", rapidjson::StringRef ( GetObjectClassName () ), allocator );
+	doc.AddMember ( "title", rapidjson::StringRef ( GetObjectClassName () ), allocator );
+	doc.AddMember ( "description", "JSON schema for CObject hierarchy", allocator );
+	doc.AddMember ( "definitions", schema, allocator );
+
+	rapidjson::StringBuffer buffer;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer ( buffer );
+	doc.Accept ( writer );
+
+	return buffer.GetString ();
+	}

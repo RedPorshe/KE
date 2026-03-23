@@ -14,8 +14,8 @@ CWorld::CWorld ( CObject * inOwner, const std::string & displayName )
 	{
 	OwningGameInstance = dynamic_cast< CGameInstance * >( inOwner );
 
-	
-	
+
+
 	}
 
 CWorld::~CWorld ()
@@ -235,8 +235,8 @@ void CWorld::BeginPlay ()
 void CWorld::Tick ( float deltaTime )
 	{
 	CurrentDeltaTime = deltaTime;
-
 	if (!bIsPlaying) return;
+
 
 	// Tick GameMode
 	if (CurrentGameMode)
@@ -328,7 +328,7 @@ void CWorld::CollectRenderInfo ( FRenderInfo * Info )
 	if (!Info->HasInfo)
 		{
 		static bool bIsShowed = false;
-		if(!bIsShowed)
+		if (!bIsShowed)
 			{
 			LOG_ERROR ( "World not set Info for render" );
 			bIsShowed = true;
@@ -365,28 +365,32 @@ FCameraInfo CWorld::FindActiveCamera ()
 				if (aspectRatio <= 0.0f) aspectRatio = 16.0f / 9.0f;
 
 				Info = camera->GetCameraInfo ( aspectRatio );
-				
+
 				return Info;
 				}
 			}
 		}
-
-	LOG_WARN ("Camera not found use fallback camera");
+	static int camerawarncount = 0;
+	if (camerawarncount < 2)
+		{
+		LOG_WARN ( "Camera not found use fallback camera" );
+		camerawarncount++;
+		}
 	float aspectRatio = CEngine::Get ().GetWindow ()->GetAspectRatio ();
 	if (aspectRatio <= 0.0001f) aspectRatio = 16.0f / 9.0f;
 
-	
-	Info.Location = { 500.f, 200.f, 300.f };  
-	Info.ViewTarget = { 500.f, 43.f, 500.f }; 
+
+	Info.Location = { 500.f, 200.f, 300.f };
+	Info.ViewTarget = { 500.f, 43.f, 500.f };
 	Info.NearPlane = 0.1f;
-	Info.FarPlane = 2000.f;  
+	Info.FarPlane = 2000.f;
 	Info.FOV = 90.f;
 
-	
+
 	Info.ViewMatrix = FMat4::LookAtMatrix (
 		Info.Location,
 		Info.ViewTarget,
-		FVector::Up ()  
+		FVector::Up ()
 	);
 
 	Info.ProjectionMatrix = FMat4::PerspectiveMatrix (
@@ -395,7 +399,7 @@ FCameraInfo CWorld::FindActiveCamera ()
 		Info.NearPlane,
 		Info.FarPlane
 	);
-	
+
 	return Info;
 	}
 

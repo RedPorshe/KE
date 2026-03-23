@@ -13,6 +13,7 @@ class KE_API CBaseComponent : public CObject
 		virtual void InitComponent ();
 		virtual void Tick ( float DeltaTime );
 		virtual void OnBeginPlay ();
+		virtual void OnEndPlay ();
 		void SetPrimaryTick ( bool value = true );
 		void SetAutoInitialize ( bool value );
 		CActor * GetOwnerActor ();
@@ -31,6 +32,7 @@ class KE_API CBaseComponent : public CObject
 		bool bIsAutoInit { true };
 		CActor * ActorOwner = nullptr;
 		float DebugTimer = 0.f;
+		bool bIsStartedEndPlay = false;
 	};
 
 REGISTER_CLASS_FACTORY ( CBaseComponent );
