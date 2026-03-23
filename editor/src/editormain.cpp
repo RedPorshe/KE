@@ -4,6 +4,7 @@
 
 int main ( int argc, char * argv [] )
 	{
+	setlocale ( LC_ALL, "ru_RU.UTF-8" );
 	LOG_INIT ( "Editor", false, true );
 #ifdef _DEBUG
 	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::TRACE );

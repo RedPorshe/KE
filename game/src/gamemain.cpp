@@ -5,6 +5,8 @@
 
 int main ( int argc, char * argv [] )
 	{
+	setlocale ( LC_ALL, "ru_RU.UTF-8" );
+
 	LOG_INIT ( "Game", false, true );
 #ifdef _DEBUG
 	LOG_SET_LEVEL ( CE::CLogger::CLogLevel::TRACE );
@@ -14,8 +16,7 @@ int main ( int argc, char * argv [] )
 	CEngine Engine {};
 	int ErrorLevel = Engine.PreInit (argc,argv );
 	if (ErrorLevel == 0)
-		{
-		LOG_INFO (  "Starting Game init engine"); // in editor another initializing
+		{		
 		ErrorLevel = 0;
 		if (ErrorLevel == Engine.Init ())
 			{

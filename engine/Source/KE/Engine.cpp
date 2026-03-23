@@ -220,8 +220,7 @@ void CEngine::Shutdown ()
 void CEngine::Run ()
 	{
 	bIsRunning = true;
-	FRenderInfo * RenderInfo = new FRenderInfo ();
-	auto rendersystem = GetRenderer ();
+	
 	auto lastTime = std::chrono::high_resolution_clock::now ();
 	if (gameinstance)
 		{
@@ -229,18 +228,16 @@ void CEngine::Run ()
 		}
 	while (bIsRunning)
 		{
-		RenderInfo->Clear ();
+		
 		auto currentTime = std::chrono::high_resolution_clock::now ();
 		float deltaTime = std::chrono::duration<float> ( currentTime - lastTime ).count ();
 		lastTime = currentTime;
 		if (deltaTime < 0.0001f) deltaTime = 0.016f;
 		if (gameinstance)
 			{
-			gameinstance->Tick ( deltaTime );
-			gameinstance->GetWorld ()->CollectRenderInfo(RenderInfo);
-			}
+			gameinstance->Tick ( deltaTime );			
+			}	
 		
-		rendersystem->SetRenderInfo (*RenderInfo);
 		for (auto system : m_systems)
 			{
 			system->Update ( deltaTime );

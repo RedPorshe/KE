@@ -19,6 +19,10 @@ class myChar : public CCharacter
 	protected:
 		void SetupPlayerInputComponent ( CInputComponent * InputComponent ) override;
 		class CCameraComponent *Camera = nullptr;
+		void DebugInfo ( float dt ) override;
+		void MoveForward ( float val );
+		void MoveRight ( float val );
+		void Jump ();
 	};
 REGISTER_CLASS_FACTORY ( myChar );
 

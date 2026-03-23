@@ -7,9 +7,7 @@ CBaseCollisionComponent::CBaseCollisionComponent ( CObject * inOwner,
     : Super ( inOwner, inDisplayName )
     {
         // Проверяем, можно ли регистрироваться в системе
-    if (CCollisionSystem::s_IsInitialized &&
-         CCollisionSystem::s_Instance &&
-         !CCollisionSystem::IsShuttingDown ())
+    if (!CCollisionSystem::IsShuttingDown ())
         {
         CCollisionSystem::Get ().RegisterCollisionComponent ( this );
         }
@@ -21,15 +19,7 @@ CBaseCollisionComponent::CBaseCollisionComponent ( CObject * inOwner,
 
 CBaseCollisionComponent::~CBaseCollisionComponent ()
     {
-        // Проверяем, можно ли отписываться от системы
-    if (CCollisionSystem::s_IsInitialized &&
-         CCollisionSystem::s_Instance &&
-         !CCollisionSystem::IsShuttingDown ())
-        {
-        CCollisionSystem::Get ().UnregisterCollisionComponent ( this );
-        }
-
-    OverlappingComponents.clear ();
+    OnEndPlay ();
     }
 
 FVector CBaseCollisionComponent::GetWorldLocation ()
@@ -104,6 +94,17 @@ void CBaseCollisionComponent::Tick ( float DeltaTime )
     Super::Tick ( DeltaTime );
     }
 
+void CBaseCollisionComponent::OnEndPlay ()
+    {
+    Super::OnEndPlay ();
+         // Проверяем, можно ли отписываться от системы
+    if (!CCollisionSystem::IsShuttingDown ())
+        {
+        CCollisionSystem::Get ().UnregisterCollisionComponent ( this );
+        }
+
+    OverlappingComponents.clear ();
+    }
 void CBaseCollisionComponent::OnBeginPlay ()
     {
     Super::OnBeginPlay ();

@@ -17,6 +17,7 @@ class KE_API CBaseCollisionComponent : public CTransformComponent
         virtual void InitComponent () override;
         virtual void Tick ( float DeltaTime ) override;
         virtual void OnBeginPlay () override;
+        void OnEndPlay () override;
 
         // Основные методы коллизий
         virtual bool CheckCollision ( CBaseCollisionComponent * other, FCollisionInfo & outInfo ) const;

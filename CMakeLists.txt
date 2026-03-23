@@ -59,6 +59,8 @@ if(NOT TARGET RapidJSON)
     message(STATUS "RapidJSON configured: ${rapidjson_SOURCE_DIR}/include")
 endif()
 
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
 message(STATUS "========================================")
 message(STATUS "Dependencies downloaded successfully!")
 message(STATUS "GLFW: ${glfw_SOURCE_DIR}")

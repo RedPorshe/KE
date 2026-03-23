@@ -9,6 +9,8 @@
 #include <glm/gtx/matrix_decompose.hpp>  // для decompose (исправлено!)
 #include <glm/gtx/transform.hpp>  // для translate, scale, rotate
 
+struct  FTransform;
+
 namespace CEMath
     {
         // Конвертация из CEMath в GLM
@@ -38,74 +40,4 @@ namespace CEMath
         return Matrix4x4 ( glmData );
         }
 
-        // Дополнительные удобные функции для FTransform
-    inline glm::mat4 ToGLMMatrix ( const FTransform & t )
-        {
-        glm::mat4 translation = glm::translate ( glm::mat4 ( 1.0f ), ToGLM ( t.Location ) );
-        glm::mat4 rotation = glm::mat4_cast ( ToGLM ( t.Rotation ) );
-        glm::mat4 scale = glm::scale ( glm::mat4 ( 1.0f ), ToGLM ( t.Scale ) );
-
-        return translation * rotation * scale;
-        }
-
-    inline FTransform FromGLMMatrix ( const glm::mat4 & m )
-        {
-            // Декомпозиция матрицы на трансформации
-        glm::vec3 scale;
-        glm::quat rotation;
-        glm::vec3 translation;
-        glm::vec3 skew;
-        glm::vec4 perspective;
-
-        glm::decompose ( m, scale, rotation, translation, skew, perspective );
-
-        return FTransform (
-            FromGLM ( translation ),
-            FromGLM ( rotation ),
-            FromGLM ( scale )
-        );
-        }
-
-        // Альтернативная ручная декомпозиция если не хотите использовать glm::decompose
-    inline FTransform FromGLMMatrixSimple ( const glm::mat4 & m )
-        {
-        FTransform result;
-
-        // Translation - последний столбец
-        result.Location = FromGLM ( glm::vec3 ( m[ 3 ] ) );
-
-        // Scale - длина каждого столбца (без учета перспективы)
-        glm::vec3 scaleX = glm::vec3 ( m[ 0 ] );
-        glm::vec3 scaleY = glm::vec3 ( m[ 1 ] );
-        glm::vec3 scaleZ = glm::vec3 ( m[ 2 ] );
-
-        result.Scale = Vector3D (
-            glm::length ( scaleX ),
-            glm::length ( scaleY ),
-            glm::length ( scaleZ )
-        );
-
-        // Rotation - нормализованная матрица без масштаба
-        // Проверяем на нулевой масштаб чтобы избежать деления на ноль
-        glm::mat3 rotationMat ( 1.0f );
-
-        if (result.Scale.x > 0.0f)
-            rotationMat[ 0 ] = scaleX / result.Scale.x;
-        else
-            rotationMat[ 0 ] = glm::vec3 ( 1.0f, 0.0f, 0.0f );
-
-        if (result.Scale.y > 0.0f)
-            rotationMat[ 1 ] = scaleY / result.Scale.y;
-        else
-            rotationMat[ 1 ] = glm::vec3 ( 0.0f, 1.0f, 0.0f );
-
-        if (result.Scale.z > 0.0f)
-            rotationMat[ 2 ] = scaleZ / result.Scale.z;
-        else
-            rotationMat[ 2 ] = glm::vec3 ( 0.0f, 0.0f, 1.0f );
-
-        result.Rotation = FromGLM ( glm::quat_cast ( rotationMat ) );
-
-        return result;
-        }
     }

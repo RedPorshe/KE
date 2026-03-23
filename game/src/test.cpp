@@ -5,6 +5,7 @@
 #include <KE/GameFramework/Actors/TerrainActor.h>
 #include <KE/GameFramework/Camera/CameraComponent.h>
 #include <KE/GameFramework/Components/Collisions/CapsuleComponent.h>
+#include <KE/GameFramework/Components/Meshes/StaticMeshComponent.h>
 #include <KE/Engine.h>
 
 
@@ -26,9 +27,10 @@ void CreateTestWorld ()
 		{
 		auto terr = level->SpawnActor<CTerrainActor> ();
 		terr->GenerateHilly ( 25, 45, 5.f );
+		terr->GenerateNoise ( 50, 50, 50.f );
 		terr->SetActorLocation ( FVector::Zero (), true );
 		auto startpoint = level->SpawnActorByClass ( "CPlayerStart", "PlayerStart", FVector ( 100.f, 100.f, 100.f ) );
-		startpoint->SetActorLocation ( { -50.f, 150.f, -50.f }, true );
+		startpoint->SetActorLocation ( { 50.f, 150.f, 50.f }, true );
 		GI->GetWorld ()->CreateGameMode<CGameMode> ();
 		auto gamemode = GI->GetWorld ()->GetGameMode ();
 		gamemode->SetDefaultPawnClass ( "myChar" );
@@ -39,7 +41,11 @@ myChar::myChar ( CObject * iowner, const std::string & inname ) :Super(iowner,in
 	{
 	Camera = AddDefaultSubObject<CCameraComponent> ( "camera" );
 	Camera->AttachTo ( Capsule );
-	Camera->SetRelativeLocation ( 0.f, 5.f, -10.f );
+	Camera->SetRelativeLocation ( 0.f, 15.f, -20.f );
+	if (Mesh)
+		{
+		Mesh->ResizeCube(1.f);
+		}
 	
 	}
 
@@ -51,7 +57,7 @@ void myChar::BeginPlay ()
 void myChar::Tick ( float dt )
 	{
 	Super::Tick ( dt );
-	LOG_DEBUG (GetName()," in ", GetActorLocation ());
+	
 	}
 
 void myChar::EndPlay ()
@@ -77,4 +83,39 @@ void myChar::OnComponentHit ( CBaseCollisionComponent * other )
 void myChar::SetupPlayerInputComponent ( CInputComponent * InputComponent )
 	{
 	Super::SetupPlayerInputComponent ( InputComponent );
+	auto input = GetInputComponent ();
+	if (input)
+		{
+		input->BindAction ( "Exit", EKeys::Escape, EInputEvent::IE_Pressed, [ this ] () { CEngine::Get ().RequestShutdown (); } );
+		input->BindAction ( "Jump", EKeys::Space, EInputEvent::IE_Pressed, [ this ] () { Jump (); } );
+		input->BindAxis ( "MoveForward", EKeys::W, EKeys::S, [ this ] ( float val ) { MoveForward ( val ); } );
+		input->BindAxis ( "MoveRight", EKeys::D, EKeys::A, [ this ] ( float val ) { MoveRight ( val ); } );
+		}
+
+	}
+void myChar::DebugInfo ( float dt )
+	{
+	DebugTimer += dt;
+	if (DebugTimer >=1.f)
+		{
+		LOG_DEBUG ( GetName (), " in ", GetActorLocation () );
+		DebugTimer = 0.f;
+		}
+	}
+
+void myChar::MoveForward ( float val )
+	{
+	auto forward = GetActorForwardVector ();
+	AddMovementInput ( forward, val );
+	}
+
+void myChar::MoveRight ( float val )
+	{
+	auto right = GetActorRightVector ();
+	AddMovementInput ( right, val );
+	}
+
+void myChar::Jump ()
+	{
+	StartJump ();
 	}

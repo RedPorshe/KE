@@ -151,7 +151,7 @@ class KE_API CInputSystem : public IEngineSystem
         bool CacheWindow ();
 
         GLFWwindow * m_WindowHandle = nullptr;
-        bool bIsInitialized = false;
+       
         float m_MouseSensitivity = 0.1f;
 
         // Input state

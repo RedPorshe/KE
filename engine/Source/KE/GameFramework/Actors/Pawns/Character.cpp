@@ -72,7 +72,7 @@ void CCharacter::BeginPlay ()
 void CCharacter::Tick ( float DeltaTime )
 	{
 	Super::Tick ( DeltaTime );
-	DebugInfo ( DeltaTime );
+	
 	}
 
 void CCharacter::EndPlay ()

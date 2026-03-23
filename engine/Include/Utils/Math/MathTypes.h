@@ -8,6 +8,7 @@
 #include "Matrix4.h"
 #include "Quaternion.h"
 #include "CE_MathHelpers.h"
+#include "Utils/MathGLMConverters.h"
 #include <cstdint> 
 
 namespace CEMath
