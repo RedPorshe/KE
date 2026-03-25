@@ -2,14 +2,16 @@
 
 #include "KE/GameFramework/Components/SceneComponent.h"
 #include "KE/Vulkan/RenderInfo.h"
-
+#include "KE/GameFramework/Meshes/BaseMesh.h"
 
 // Forward declarations
 class CBufferManager;
 struct FVertexInputDescription;
+
 /**
  * Базовый класс для всех компонентов, которые могут рендерить меши
  * Наследуется от CSceneComponent для поддержки трансформаций
+ * Использует CBaseMesh как источник данных о геометрии
  */
 class KE_API CBaseMeshComponent : public CSceneComponent
     {
@@ -23,29 +25,54 @@ class KE_API CBaseMeshComponent : public CSceneComponent
         virtual void InitComponent () override;
         virtual void Tick ( float DeltaTime ) override;
         virtual void OnBeginPlay () override;
-        void OnEndPlay () override;
+        virtual void OnEndPlay () override;
+
+        // ========== Управление мешем ==========
+        /**
+         * Установить меш по пути к файлу
+         * @param MeshPath - путь к файлу меша (относительно ModelsPath)
+         */
+        void SetMesh ( const std::string & MeshPath );
+
+        /**
+         * Установить готовый меш
+         * @param InMeshData - указатель на данные меша
+         */
+        void SetMesh ( CBaseMesh * InMeshData );
+
+        /**
+         * Получить указатель на меш
+         */
+        CBaseMesh * GetMesh () const { return MeshData; }
+
+        /**
+         * Проверить, есть ли данные меша
+         */
+        bool HasMeshData () const { return MeshData && MeshData->IsValid (); }
+
         // ========== Интерфейс для рендера ==========
         /**
          * Получить информацию о меше для рендера
          * Использует мировую матрицу трансформации из CTransformComponent
          * @return структура с информацией о меше
          */
-        virtual FMeshInfo GetMeshInfo () ;
-        virtual FTerrainRenderInfo GetTerrainInfo () 
+        virtual FMeshInfo GetMeshInfo ();
+
+        virtual FTerrainRenderInfo GetTerrainInfo ()
             {
             return FTerrainRenderInfo ();
             }
-        /**
-         * Проверить, готов ли компонент к рендеру
-         */
+
+            /**
+             * Проверить, готов ли компонент к рендеру
+             */
         virtual bool IsReadyForRender () const;
 
         /**
          * Создать Vulkan ресурсы (буферы и т.д.)
-         * @param BufferManager - менеджер буферов для создания ресурсов
          */
-        virtual void CreateRenderResources (  );
-        
+        virtual void CreateRenderResources ();
+
         /**
          * Уничтожить Vulkan ресурсы
          */
@@ -77,14 +104,14 @@ class KE_API CBaseMeshComponent : public CSceneComponent
     protected:
         // ========== Методы для переопределения в наследниках ==========
         /**
-         * Генерировать вершины меша
-         * Должен быть переопределён в наследниках
+         * Генерировать вершины меша (если не используется CBaseMesh)
+         * Должен быть переопределён в наследниках для процедурной генерации
          */
         virtual void GenerateVertices ( std::vector<struct FMeshVertex> & OutVertices ) const;
 
         /**
-         * Генерировать индексы меша
-         * Должен быть переопределён в наследниках
+         * Генерировать индексы меша (если не используется CBaseMesh)
+         * Должен быть переопределён в наследниках для процедурной генерации
          */
         virtual void GenerateIndices ( std::vector<uint32_t> & OutIndices ) const;
 
@@ -92,20 +119,27 @@ class KE_API CBaseMeshComponent : public CSceneComponent
          * Получить описание вершин для Vulkan
          * Можно переопределить в наследниках для кастомного формата
          */
-        virtual FVertexInputDescription GetVertexInputDescription () const;  // Убрали = 0, добавили реализацию в cpp
+        virtual FVertexInputDescription GetVertexInputDescription () const;
+
+        /**
+         * Обновить данные из меша
+         */
+        void UpdateFromMeshData ();
 
     protected:
         // ========== Данные меша ==========
-        std::vector<float> m_VerticesData;      // Временные данные (до создания буферов)
-        std::vector<uint32_t> m_Indices;        // Временные данные (до создания буферов)
+        CBaseMesh* MeshData;  // Данные меша (вершины, индексы)
 
         // ========== Vulkan ресурсы ==========
         VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
         VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
-        VkDeviceMemory m_vertexmemory = VK_NULL_HANDLE;
-        VkDeviceMemory m_indexmemory = VK_NULL_HANDLE;
-        void * mapedIndexMemory = nullptr;
-        void * mapedVertexMemory = nullptr;
+        VkDeviceMemory m_VertexMemory = VK_NULL_HANDLE;
+        VkDeviceMemory m_IndexMemory = VK_NULL_HANDLE;
+        void * m_MappedVertexMemory = nullptr;
+        void * m_MappedIndexMemory = nullptr;
+        VkDeviceSize m_VertexBufferSize = 0;
+        VkDeviceSize m_IndexBufferSize = 0;
+
         uint32_t m_VertexCount = 0;
         uint32_t m_IndexCount = 0;
 
@@ -116,9 +150,7 @@ class KE_API CBaseMeshComponent : public CSceneComponent
         // ========== Состояние ==========
         bool m_bVisible = true;
         bool m_bRenderResourcesCreated = false;
+        bool m_bUseMeshData = false;  // Используем ли MeshData
     };
-
-   
-
 
 REGISTER_CLASS_FACTORY ( CBaseMeshComponent );

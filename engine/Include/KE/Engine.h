@@ -51,6 +51,7 @@ class KE_API CEngine
         class RenderSystem * GetRenderer () const;
         class CInputSystem * GetInputSystem () const;
         class CCollisionSystem * GetCollisionSystem () const;
+        class ResourceSystem * GetResourceSystem () const;
 
         bool ValidatePaths () const;
 

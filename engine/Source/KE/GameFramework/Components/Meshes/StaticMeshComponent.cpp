@@ -24,6 +24,11 @@ void CStaticMeshComponent::InitComponent ()
     auto * bufferManager = CEngine::Get ().GetRenderer ()->GetBufferManager ();
     if (bufferManager)
         {
+        if (MeshData)
+            {
+            StaticMesh_vertices = MeshData->GetVertices ();
+            StaticMesh_indices = MeshData->GetIndices ();
+            }
         if (StaticMesh_vertices.empty ())
             {
             CreateFallBackCube ();

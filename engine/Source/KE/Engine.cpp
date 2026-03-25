@@ -3,6 +3,7 @@
 #include "KE/Systems/WindowSystem.h"
 #include "KE/Systems/RenderSystem.h"
 #include "KE/Systems/InputSystem.h"
+#include "KE/Systems/ResourceSystem.h"
 #include "KE/Systems/CollisionSystem.h"
 #include "KE/Systems/GLFWDispatcher.h"
 #include <KE/GameFramework/GameInstance.h>
@@ -43,6 +44,11 @@ RenderSystem * CEngine::GetRenderer () const
 CInputSystem * CEngine::GetInputSystem () const
 	{
 	return static_cast < CInputSystem * >( GetSystem<CInputSystem> ().get () );
+	}
+
+ResourceSystem * CEngine::GetResourceSystem () const
+	{
+	return static_cast < ResourceSystem * >( GetSystem<ResourceSystem> ().get () );
 	}
 
 CCollisionSystem * CEngine::GetCollisionSystem () const
@@ -199,10 +205,17 @@ void CEngine::RegisterAllSystems ()
 		{
 		input->SetEnginePtr ( this );		
 		}
+
 	auto CollisionSystem = RegisterSystem<CCollisionSystem> ();
 	if (CCollisionSystem * collision = dynamic_cast< CCollisionSystem * >( CollisionSystem.get () ))
 		{
 		collision->SetEnginePtr ( this );
+		}
+
+	auto resourceSystem = RegisterSystem<ResourceSystem> ();
+	if (ResourceSystem * resSystem = dynamic_cast< ResourceSystem * >( resourceSystem.get () ))
+		{
+		resSystem->SetEnginePtr ( this );
 		}
 
 	LOG_DEBUG ( "All Systems registered: (", m_systems.size (), ") systems" );

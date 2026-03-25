@@ -25,7 +25,7 @@ class KE_API RenderSystem : public IEngineSystem
         const std::string GetSystemName () const override;
         void SetEngineName ( const std::string & inName ); 
         void SetAplicationName ( const std::string & inName );
-
+        class DeviceManager * GetDeviceManager () const { return DeviceMgr; }
         void SetRenderInfo ( const FRenderInfo & RenderInfo ) { m_RenderInfo = RenderInfo; }
         const FRenderInfo & GetRenderInfo () const { return m_RenderInfo; }
         class BufferManager * GetBufferManager () const { return BuffMgr; }
@@ -85,6 +85,7 @@ class KE_API RenderSystem : public IEngineSystem
         class CommandManager * CmdManager = nullptr;
         class PipelineManager * PipelineMgr = nullptr;
         class RenderPassManager * RenderPassMgr = nullptr;
+        class DeviceManager * DeviceMgr = nullptr;
         class CSyncManager* SyncMgr = nullptr;
         class BufferManager * BuffMgr = nullptr;
         class DescriptorManager * DescMgr = nullptr;

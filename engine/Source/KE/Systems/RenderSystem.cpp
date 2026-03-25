@@ -465,8 +465,9 @@ bool RenderSystem::CacheManagers ()
 	SyncMgr = dynamic_cast< CSyncManager * >( Info->Managers.SyncManager.get () );
 	BuffMgr = dynamic_cast< BufferManager * >( Info->Managers.BufferManager.get () );
 	DescMgr = dynamic_cast< DescriptorManager * >( Info->Managers.DescriptorManager.get () );
+	DeviceMgr = dynamic_cast< DeviceManager * >( Info->Managers.DeviceManager.get () );
 
-	bool allValid = Swapchain && CmdManager && PipelineMgr && RenderPassMgr && SyncMgr && BuffMgr && DescMgr;
+	bool allValid = Swapchain && CmdManager && PipelineMgr && RenderPassMgr && SyncMgr && BuffMgr && DescMgr && DeviceMgr;
 
 	if (!allValid)
 		{
@@ -477,6 +478,7 @@ bool RenderSystem::CacheManagers ()
 		if (!SyncMgr) LogError ( "SyncManager not available" );
 		if (!BuffMgr) LogError ( "BufferManager not available" );
 		if (!DescMgr) LogError ( "DescriptorManager not available" );
+		if (!DeviceMgr) LogError ( "DeviceManager not available" );
 		}
 	else
 		{
