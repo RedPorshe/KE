@@ -65,8 +65,8 @@ void CameraPawnActor::MoveRight ( float value )
 
 void CameraPawnActor::MoveUp ( float value )
 	{
-	auto Up = GetActorUpVector ();
-	auto NewDelta = Up * m_speed * value * GetWorld ()->GetDeltaSeconds ();
+	
+	auto NewDelta = FVector::Up() * m_speed * value * GetWorld ()->GetDeltaSeconds ();
 	MoveActor ( NewDelta );
 	}
 

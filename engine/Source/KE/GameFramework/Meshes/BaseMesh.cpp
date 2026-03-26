@@ -148,6 +148,11 @@ CBaseMesh * CBaseMesh::LoadMesh ( const std::string & MeshPath )
 
     return this;
     }
+    bool CBaseMesh::IsValid ()const
+        {
+        if (this == nullptr) return false;
+        return !m_Vertices.empty ();
+        }
 bool CBaseMesh::LoadOBJ ( const std::string & Path )
 	{
     LOG_DEBUG ( "Loading OBJ: ", Path );
@@ -227,7 +232,6 @@ bool CBaseMesh::LoadOBJ ( const std::string & Path )
         return false;
         }
 
-        // Строим финальные вершины
     m_Vertices.clear ();
     m_Indices.clear ();
 

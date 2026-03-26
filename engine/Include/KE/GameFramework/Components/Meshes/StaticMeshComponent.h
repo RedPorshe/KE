@@ -13,7 +13,7 @@ class KE_API CStaticMeshComponent : public CBaseMeshComponent
 		virtual void InitComponent () override;
 		virtual void Tick ( float DeltaTime ) override;
 		virtual void OnBeginPlay () override;
-		void CreateFallBackCube ( float Size  = 10.0f  );
+		void CreateFallBackCube ( float Size  = 1.0f  );
 		void ResizeCube ( float NewSize );
 		void CreateBolt ();
 	protected:

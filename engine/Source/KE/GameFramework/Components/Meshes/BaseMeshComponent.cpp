@@ -14,6 +14,9 @@ CBaseMeshComponent::CBaseMeshComponent ( CObject * inOwner, const std::string & 
     : Super ( inOwner, inDisplayName )
     {
     LOG_DEBUG ( "BaseMeshComponent created: ", GetName () );
+    MeshData = AddSubObject<CBaseMesh> ( GetName () + "_MeshData" );
+    auto MeshManager = CEngine::Get ().GetResourceSystem ()->GetMeshManager ();
+    MeshData->SetMeshManager ( MeshManager );
     }
 
 CBaseMeshComponent::~CBaseMeshComponent ()

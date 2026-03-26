@@ -103,6 +103,7 @@ std::shared_ptr<CBaseMesh> MeshManager::LoadMeshFromFile ( const std::string & P
     m_Meshes[ Path ] = mesh;
     auto MeshesPath = m_Engine->GetModelsPath ();
 
+   
     if (!mesh->LoadMesh ( MeshesPath+Path ))
         {
         LogError ( "Failed to load mesh: ", Path );

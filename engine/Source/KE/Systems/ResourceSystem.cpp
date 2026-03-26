@@ -29,6 +29,10 @@ bool ResourceSystem::PreInit ()
 	return true;
 	}
 
+MeshManager * ResourceSystem::GetMeshManager () const
+	{	 
+	return GetManager<MeshManager> ().get();
+	}
 
 bool ResourceSystem::Init ()
 	{

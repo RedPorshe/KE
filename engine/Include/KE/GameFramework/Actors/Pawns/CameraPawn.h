@@ -15,7 +15,7 @@ class CameraPawnActor : public CPawn
 	protected:
 	void SetupPlayerInputComponent ( CInputComponent * InputComponent ) override;
 	class CCameraComponent * Camera = nullptr;
-	float m_speed = 1000.f;
+	float m_speed = 200.f;
 	float m_mouseSens = 0.5f;
 	void MoveForward ( float value );
 	void MoveRight ( float value );

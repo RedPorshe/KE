@@ -31,10 +31,7 @@ void CreateTestWorld ()
 		terr->SetActorLocation ( FVector::Zero (), true );
 		auto startpoint = level->SpawnActorByClass ( "CPlayerStart", "PlayerStart", FVector ( 100.f, 100.f, 100.f ) );
 		startpoint->SetActorLocation ( { 100.f, 100.f, 100.f }, true );
-		auto Act = level->SpawnActor<CActor> ( "vik Room" );
-		Act->SetActorLocation ( { 100.f, 100.f, 100.f },true );
-		auto vikModel = Act->AddDefaultSubObject<CStaticMeshComponent> ( "VikRoom" );
-		vikModel->SetMesh ( "viking_room.obj" );
+		
 		GI->GetWorld ()->CreateGameMode<CGameMode> ();
 		auto gamemode = GI->GetWorld ()->GetGameMode ();
 		gamemode->SetDefaultPawnClass ( "myChar" );
@@ -47,10 +44,7 @@ myChar::myChar ( CObject * iowner, const std::string & inname ) :Super(iowner,in
 	Camera = AddDefaultSubObject<CCameraComponent> ( "camera" );
 	Camera->AttachTo ( Capsule );
 	Camera->SetRelativeLocation ( 0.f, 15.f, -20.f );
-	if (Mesh)
-		{
-		//Mesh->ResizeCube(1.f);
-		}
+	
 	SetDrawCollisions ( true );
 	}
 
@@ -95,11 +89,7 @@ void myChar::SetupPlayerInputComponent ( CInputComponent * InputComponent )
 		input->BindAction ( "Jump", EKeys::Space, EInputEvent::IE_Pressed, [ this ] () { Jump (); } );
 		input->BindAxis ( "MoveForward", EKeys::W, EKeys::S, [ this ] ( float val ) { MoveForward ( val ); } );
 		input->BindAxis ( "MoveRight", EKeys::D, EKeys::A, [ this ] ( float val ) { MoveRight ( val ); } );
-		}
-	if (Mesh)
-		{		
-		Mesh->SetMesh ( "viking_room.obj" );
-		}
+		}	
 	}
 void myChar::DebugInfo ( float dt )
 	{

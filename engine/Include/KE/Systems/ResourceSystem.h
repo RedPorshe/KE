@@ -13,6 +13,8 @@ class ResourceSystem : public IEngineSystem
 		 void Shutdown () override ;
 		 void Update ( float DeltaTime ) override;
 
+		 class MeshManager * GetMeshManager () const;
+
 		 template<typename T>
 		 TSharedPtr<T> GetManager () const
 			 {

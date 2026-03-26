@@ -119,8 +119,7 @@ void CCharacter::OnComponentEndOverlap ( CBaseCollisionComponent * other )
 
 void CCharacter::OnComponentHit ( CBaseCollisionComponent * other )
 	{
-	auto otherActor = other->GetOwnerActor ();
-	if (CTerrainActor * terra = dynamic_cast< CTerrainActor * >( otherActor )) return;
+	
 
 
 	}
